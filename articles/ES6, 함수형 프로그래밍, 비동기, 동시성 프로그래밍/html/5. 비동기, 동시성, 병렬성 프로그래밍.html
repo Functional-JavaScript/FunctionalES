@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>5. 비동기, 동시성, 병렬성 프로그래밍</title>
+  <script src="functional.es.js"></script>
+  <script>
+    const { curry2, pipe, go, map, cMap, each, cSome, some } = Functional;
+  </script>
+</head>
+<body>
+
+# 5. 비동기, 동시성, 병렬성 프로그래밍
+
+### 목차
+- 들어가기 앞서 Promise, async/await에 대해
+- Promise는 콜백 지옥을 해결한 것일까?
+- promise.then(f)의 규칙
+- Promise 체인
+- then :: Promise p => (a -> b | p b) -> a | p a -> b | p b
+- then에 커링 적용하기
+- 파이프라인
+- 이미지 동시에 모두 불러온 후 DOM에 반영하기
+- cMap과 limit
+- 쇼트트랙 계주 - 순서대로 실행하기
+- 동시적으로 혹은 순차적으로
+- async/await는 은총알인가?
+- 더 많은 함수들
+
+## 들어가기 앞서 Promise, async/await에 대해
+
+Promise, async, await는 ES6+에서 비동기 프로그래밍을 지탱하는 기술입니다. 자바스크립트에 현재까지 준비된 비동기 관련 Helpers를 통해 해결할 수 있는 일은 다음과 같습니다.
+
+### 1. then의 연속 사용으로 순차적으로 코드를 정리하기
+```
+then
+then
+then
+then
+```
+
+### 2. reject, catch
+
+```
+then
+then
+reject --
+then    |
+then    |
+catch <--
+```
+
+### 3. Promise.all, Promise.race
+
+```
+Promise.all(imgUrls.map(loadImage)).then(console.log);
+// [img1, img2, img3] (완성된 모든 결과)
+
+Promise.race(imgUrls.map(loadImage)).then(console.log);
+// img2 (제일 먼저 완성된 결과 하나)
+```
+
+### 4. 명령형 코드와 async await 사용하기
+
+```
+async function f(a) {
+  for (var i = 0; i < a.length; i++) {
+    if (i < ...) {
+      var b = await get();
+    } else {
+      b = ...
+      ...
+    }
+    for (var j = 0; j < i; j++) {
+      ...
+      if (j == b) var c = await();
+    }
+  }
+}
+```
+
+ES6+는 Promise, async/await를 통해 비동기 프로그래밍을 더욱 잘 다룰 수 있도록 발전했습니다. 하지만 Promise와 async/await를 명령적으로 다루게되면 명령형 프로그래밍에서 만날 수 있는 문제들에 다시 직면하게 됩니다. 아무리 동기 코드와 동일한 코드가 가능하더라도 `for, if, i++, j++` 등을 이용한 코드는 어렵습니다.
+
+## Promise는 콜백 지옥을 해결한 것일까?
+
+Promise는 콜백 지옥을 해결한 것이 아닙니다. Promise는 콜백 지옥을 해결할 기반입니다. Promise는 '결과 값이 만들어지기로 약속된 값'이자 일급 객체입니다. Promise가 컨텍스트가 아니라 값이라는 것은 인자와 리턴값으로 소통할 수 있다는 중요한 차이를 가집니다.
+
+이 글에서는 함수를 값으로 다루면서 원하는 시점에 평가하고, Promise를 인자와 리턴값으로 다루면서 비동기/동시성/병렬성 문제를 해결해볼 것입니다. 비동기/동시성/병렬성 프로그래밍은 함수형 프로그래밍의 특기입니다.
+
+## promise.then(f)의 규칙
+
+Promise는 비동기적으로 성공과 실패를 다루는데, 성공했다면 `promise.then(f)`와 같이 인자로 함수를 전달하여 값을 받을 수 있습니다. 이때 `f`가 인자로 받는 값은 절대 Promise가 아니라는 규칙이 있습니다. 이것은 Promise가 연속적으로 적용되어도 된다는 중요한 규칙이며, 연속성은 함수형 프로그래밍과 연관이 깊은 성질입니다.
+
+<script>
+new Promise(function(resolve) {
+  resolve(Promise.resolve(Promise.resolve('hi')));
+}).then(function(a) {
+  console.log(a); // hi
+});
+</script>
+
+## Promise 체인
+
+<script>
+function num(a) {
+  return a;
+}
+
+function add10(a) {
+  return a + 10;
+}
+
+console.log(add10(add10(num(0))));
+// 20
+</script>
+
+위 코드는 정상 동작했지만 아래는 정상동작하지 않습니다.
+
+<script>
+function numP(a) {
+  return new Promise(function(resolve) {
+    setTimeout(function() {
+      resolve(a);
+    }, 1000);
+  });
+}
+
+console.log(add10(add10(numP(2))));
+// [object Promise]1010
+</script>
+
+Promise를 다루는 가장 기본적인 방법은 아래와 같습니다.
+
+<script>
+numP(1)
+  .then(add10)
+  .then(add10)
+  .then(console.log); // 1초 뒤 21
+</script>
+
+반대로 `num`을 사용하면서 위와 동일한 패턴으로 코딩을 할 경우 에러가 나게되므로 아래와 같이 해야합니다.
+
+<script>
+Promise.resolve(num(2))
+  .then(add10)
+  .then(add10)
+  .then(console.log); // 22 (hi보다 아래 출력)
+
+console.log('hi');
+</script>
+
+그런데 위와 같은 방식은 성능적으로 문제가 있습니다. 반드시 비동기가 일어나기 때문입니다. 간혹 라이브러리들이 동기와 비동기를 같은 코드로 제어하기 위해 무조건 Promise 혹은 비동기를 관리하는 모나드로 감싸서 제어하는 경우가 있습니다. 이런 방식은 성능적으로도 문제가 있을 뿐 아니라, 특히 브라우저에서는 콜 스택과 렌더링이 연관성 때문에 부자연스러운 렌더링, 성능 등의 여러가지 문제를 야기합니다.
+
+## then :: Promise p => (a -> b | p b) -> a | p a -> b | p b
+
+아주 작은 함수로 동기와 비동기를 색다르게 다루는 방법을 소개합니다.
+
+<script>
+function then(f, a) {
+  return a instanceof Promise ? a.then(f) : f(a);
+}
+</script>
+
+`then`은 인자로 들어온 `a`가 Promise라면 `a.then(f)`를, 아니라면 `f(a)`를 하는 단순한 함수입니다.
+
+<script>
+function add100(a) {
+  return then(a => a + 100, a);
+}
+function log(a) {
+  return then(console.log, a);
+}
+
+log(add100(add100(num(3)))); // 즉시 203 (ho 전에 출력)
+console.log('ho'); // ho
+log(add100(add100(numP(4)))); // 1초 뒤 204
+</script>
+
+`log(add100(add100(num(3))))`은 즉시 결과를 만들었고, 정상동작하지 않았던 `console.log(add10(add10(numP())))`와 동일한 형태로 코드를 작성했지만 위 코드는 정상 동작했습니다.
+
+## then에 커링 적용하기
+
+`then` 함수가 커링을 지원하면 더욱 간결하게 표현할 수 있습니다.
+
+<script type="module">
+const { curry2 } = Functional;
+const then = curry2((f, a) => a instanceof Promise ? a.then(f) : f(a));
+
+const add10 = then(a => a + 10);
+const add100 = then(a => a + 100);
+const log = then(console.log);
+
+log(add100(add10(num(5)))); // 즉시 115
+log(add100(add10(numP(6)))); // 1초 뒤 116
+</script>
+
+아주 작은 함수 `then`을 통해 동기와 비동기를 하나의 함수로 다루는 패턴을 확인해보았습니다. 더 복잡한 동기와 비동기를 동일한 코드로 지원하고자 한다면 함수형 프로그래밍으로 간결하게 해결할 수 있습니다.
+
+## 파이프라인
+
+`pipe` 함수를 사용하면 프로미스 체인을 간결하게 표현할 수 있고, 더 안전합니다.
+
+<script>
+// Functional
+const f2 = pipe(add10, add10, add10, console.log);
+f2(num(7)); // 즉시 37
+f2(numP(7)); // 1초 뒤 37
+
+// Vanilla
+const f1 = p => p.then(add10).then(add10).then(add10).then(console.log);
+f1(num(8)); // err
+f1(numP(8)); // 1초 뒤 38
+</script>
+
+functional.es의 `pipe`는 중간에 Promise를 만난다면 즉시 Promise를 리턴한 후 비동기적인 상황들을 동기적으로 제어하고, 중간에 Promise를 만나지 않는다면 즉시 값를 리턴합니다.
+
+## 이미지 동시에 모두 불러온 후 DOM에 반영하기
+
+자바스크립트에서 이미지를 다루는 일에 있어서 비동기 상황은 원래 중요했지만, HTTP2 시대가 오면서 더욱 중요해졌습니다. 단순히 비동기 상황을 동기적으로 제어하는 것을 넘어, 한 번에 많은 양의 이미지를 동시적으로 요청하고 로딩할 수 있기 때문에 다양한 동시성 로직을 구현할 수 있게 되었고, 어떻게 코딩하느냐에 따라 굉장히 다른 결과를 만들 수 있게 되었습니다.
+
+```html
+<div id="el1"></div>
+<div id="el2"></div>
+```
+
+<script>
+function loadImage(src) {
+  return new Promise(function(resolve) {
+    var image = new Image();
+    image.onload = function() { resolve(image); };
+    image.src = src;
+  });
+}
+
+// 이미지 주소 출처 - http://www.http2demo.io
+const urls = [
+  "https://1906714720.rsc.cdn77.org/http2/tiles_final/tile_0.png",
+  "https://1906714720.rsc.cdn77.org/http2/tiles_final/tile_1.png",
+  "https://1906714720.rsc.cdn77.org/http2/tiles_final/tile_2.png"
+];
+
+const el1 = document.querySelector('#el1');
+const el2 = document.querySelector('#el2');
+
+// Vanilla
+Promise.all(
+  urls.map(loadImage)
+).then(imgs =>
+  imgs.forEach(img => el1.appendChild(img))
+);
+
+// Functional
+go(urls,
+  cMap(loadImage),
+  each(img => el2.appendChild(img)));
+</script>
+```
+
+두 코드 모두 동일한 결과를 만들지만, Functional한 코드가 더욱 간결하고 읽기 좋습니다. 위에서부터 아래로 읽어내려가면 됩니다. Promise.all을 쓴 코드의 경우 코드가 순서대로 읽히지는 않습니다.
+
+`cMap`을 간단하게 구현하면 다음과 같습니다. `cMap`은 비동기 상황 모드를 동시에 출발 시킨 후 결과를 완성해갑니다.
+
+<script type="module">
+const cMap = curry2((f, coll) =>
+  map(([a]) => a,
+    map(a => [f(a)], coll)));
+
+go([1, 2, 3],
+  map(add10),
+  console.log); // 3초 뒤 [11, 12, 13]
+
+go([4, 5, 6],
+  cMap(add10),
+  console.log); // 1초 뒤 [14, 15, 16]
+
+go({ a: 7, b: 8, c: 9 },
+  cMap(add10),
+  console.log); // 1초 뒤 { a: 17, b: 18, c: 19 }
+
+go(new Map([['a', 10], ['b', 11], ['c', 12]]),
+  cMap(add10),
+  console.log); // 1초 뒤 Map(3) {"a" => 20, "b" => 21, "c" => 22}
+</script>
+
+## cMap과 limit
+
+크기가 아주 큰 배열을 가지고 부하가 큰 작업을 `cMap`으로 돌리게되면 문제가 생길 수 있습니다. Functional.es의 `cMap`은 `limit`을 통해 `cMap`이 동시에 처리할 크기를 정할 수 있습니다. 이러한 로직이 꼭 필요한 상황이 있습니다.
+
+<script type="module">
+const { cMap } = Functional;
+
+let start;
+const reset = _ => start = new Date();
+const check = _ => parseInt((new Date() - start) / 1000);
+
+const add10 = a => new Promise(function(resolve) {
+  console.log(`들어온 시간: ${check()}초 뒤`);
+  setTimeout(function() {
+    resolve(a + 10);
+  }, 1000);
+});
+
+pipe(
+  reset,
+  _ => cMap(add10, [1, 2, 3, 4, 5, 6], 2),
+  a => console.log(`끝난 시간: ${check()}초 뒤`, a),
+  // 들어온시간: 0초 뒤
+  // 들어온시간: 0초 뒤
+  // 들어온시간: 1초 뒤
+  // 들어온시간: 1초 뒤
+  // 들어온시간: 2초 뒤
+  // 들어온시간: 2초 뒤
+  // 끝난 시간: 3초 뒤 (6) [11, 12, 13, 14, 15, 16]
+
+  reset,
+  _ => cMap(add10, { a: 11, b: 12, c: 13, d: 14, e: 15}, 3),
+  a => console.log(`끝난 시간: ${check()}초 뒤`, a)
+  // 들어온시간: 0초 뒤
+  // 들어온시간: 0초 뒤
+  // 들어온시간: 0초 뒤
+  // 들어온시간: 1초 뒤
+  // 들어온시간: 1초 뒤
+  // 끝난 시간: 2초 뒤 {a: 21, b: 22, c: 23, d: 24, e: 25}
+) ();
+</script>
+
+`cMap`의 세 번째 인자인 `limit`만 정해주면 매우 간단하게 부하 정도를 조절할 수 있습니다. 이와 같은 코드를 명령형으로 작성하게되면, Promise, async/await를 사용하여도 매번 재귀, i++, if 등을 만나야합니다. 그에 비해 `cMap`은 매우 쉽고 안전하며, 다형성을 지원하여 배열 외에도 모든 컬렉션을 병렬적으로 다룰 수 있습니다.
+
+자바스크립트에서 왠 병렬이냐고 생각하실 수 있습니다. 하지만 실무에서는 데이터베이스도 사용하고, 이미지 처리(crop, resize ...) 등 네트워크를 기반으로한 다양한 기술을 사용하게 됩니다. 요즘에는 서비스 하나에서 두 개 이상의 데이터베이스를 사용하는 것도 일반적입니다. NodeJS 프로그래밍을 할 때, 다양한 처리를 동시적으로 안전하게 위임할 수 있다면, 빠른 사용자 응답을 보다 쉽게 구현할 수 있습니다.
+
+## 쇼트트랙 계주 - 순서대로 실행하기
+
+<script>
+const team1 = {
+  name: 'italy',
+  skaters: [
+    { name: 'i1', time: 3000, und: 40 },
+    { name: 'i2', time: 2000, und: 30 },
+    { name: 'i3', time: 1000, und: 20 }
+  ]
+};
+
+const team2 = {
+  name: 'korea',
+  skaters: [
+    { name: 'k1', time: 4000, und: 30 },
+    { name: 'k2', time: 800, und: 20 },
+    { name: 'k3', time: 1200, und: 20 }
+  ]
+};
+
+function upAndDown(skater) {
+  return Math.floor((Math.random() * skater.und));
+}
+
+function skate(skater) {
+  console.log(`${skater.name} 출발`);
+  return new Promise(function(resolve) {
+    setTimeout(function() {
+      resolve();
+    }, skater.time + upAndDown(skater));
+  });
+}
+</script>
+
+한국과 이탈리아가 쇼트트랙 계주를 하는 화면을 구현한다고 가정해봅시다. `skater`는 자신의 평균 기록(`time`)과 기복(`und`)을 가지고 있습니다. 두 팀은 동시에 출발을 해야하고, 앞 선수가 다 돌아야 다음 선수가 출발할 수 있습니다.
+
+<script>
+// Vanilla - Promise
+function quarterfinal(teams) {
+  return Promise
+    .all(
+      teams.map(team =>
+        function skateAll(skaters, i = 0) {
+          if (skaters.length == i) return;
+          return skate(skaters[i]).then(_=> skateAll(skaters, i+1));
+        } (team.skaters)
+          .then(_=> console.log(`${team.name}팀 결승선 통과!`))
+      )
+    )
+    .then(_=> console.log('준준결승 종료'));
+}
+
+// Vanilla - async/awiat
+async function semifinal(teams) {
+  await Promise.all(teams.map(async function(team) {
+    for (const skater of team.skaters) {
+      await skate(skater);
+    }
+    console.log(`${team.name}팀 결승선 통과!`)
+  }));
+  console.log('준결승 종료')
+}
+
+// Functional
+const final = pipe(
+  cMap(({skaters, name}) => go(
+    each(skate, skaters),
+    _=> console.log(`${name}팀 결승선 통과!`))),
+  _=> console.log('결승 종료!'));
+</script>
+
+모두 함께 실행해보면 다음과 같습니다.
+
+<script>
+setTimeout(function() {
+  console.log('올림픽 시작!');
+  each(f => f([team1, team2]), [
+    quarterfinal,
+    semifinal,
+    final]);
+}, 7000);
+
+// 올림픽 시작!
+// ...
+// ...
+// 준준결승 종료
+// ...
+// ...
+// 준결승 종료
+// i1 출발
+// k1 출발
+// i2 출발
+// k2 출발
+// k3 출발
+// i3 출발
+// korea팀 결승선 통과!
+// italy팀 결승선 통과!
+// 결승 종료!
+</script>
+
+## 동시적으로 혹은 순차적으로
+
+`concurrency`와 `series`는 원하는 자료구조를 함수 실행을 통해 만들기 위해 사용합니다. 특히 비동기 상황에서 실용적으로 사용될 수 있습니다. 데이터베이스에서 두 개의 테이블을 통해 값을 얻어온다던지 할 때 사용하면 용이합니다.
+
+`concurrency`와 `series`가 푸는 문제는 서로 약간은 다릅니다. 개발자는 이것을 선택하기만 하면 됩니다. `concurrency`와 `series`도 각각 `cMap`과 `map`으로 구현되어있습니다. 함수형 프로그래밍은 이미 해결한 문제와 조금은 다른 문제들을 기존의 구현된 함수와 새로운 함수의 조합으로 해결해나갑니다.
+
+<script type="module">
+function numP(a) {
+  return new Promise(function(resolve) {
+    setTimeout(function() {
+      resolve(a);
+    }, 1000);
+  });
+}
+
+const concurrency = cMap(a => a());
+const series = map(a => a());
+
+concurrency([
+  _=> numP(10000),
+  _=> numP(20000)]
+).then(console.log);
+// [10000, 20000] (1초 뒤)
+
+concurrency({
+  a: _=> numP(10000),
+  b: _=> numP(20000)
+}).then(console.log);
+// {a: 10000, b: 20000} (1초 뒤)
+
+concurrency(new Map([
+  ['a', _=> numP(10000)],
+  ['b', _=> numP(20000)]
+])).then(console.log);
+// Map(2) {"a" => 10000, "b" => 20000} (1초 뒤)
+
+series([
+  _=> numP(30000),
+  _=> numP(40000)]
+).then(console.log);
+// [30000, 40000] (2초 뒤)
+
+series({
+  a: _=> numP(30000),
+  b: _=> numP(40000)
+}).then(console.log);
+// {a: 30000, b: 40000} (2초 뒤)
+
+series(new Map([
+  ['a', _=> numP(30000)],
+  ['b', _=> numP(40000)]
+])).then(console.log);
+// Map(2) {"a" => 30000, "b" => 40000} (2초 뒤)
+</script>
+
+## async/await는 은총알인가?
+
+자바스크립트에는 이미 Array.prototype.map이 있는데, 왜 map을 구현해야할까요. 혹은 async/await가 있는데 비동기를 제어하는 함수들을 왜 또 구현을 해야할까요. 혹은 다른 함수형 라이브러리의 map도 있는데 왜 굳이 functional.es의 map이 필요할까요.
+
+async/await는 명령적입니다. 명령형 코드는 헷갈립니다. async/await가 명시적으로 모든 비동기 코드를 동기적으로 만들어주는 것 같지만 그렇지 않습니다.
+
+<script>
+const add2 = a => Promise.resolve(a + 2);
+
+(function() {
+  const list = [1, 2, 3, 4];
+  const result = list.map(async function(val) {
+    return await add2(val);
+  });
+  console.log(result, 'async/await 1');
+  // [Promise, Promise, Promise, Promise] async/await 1
+}) ();
+</script>
+
+숫자들이 출력되길 기대했으나, 위 코드는 원하는 결과를 얻지 못했습니다. 아참 `list.map` 앞에도 `await`를 넣어야 하겠네요. 맨 바깥쪽의 익명함수도 `async`를 달아주었습니다.
+
+<script>
+(async function() {
+  const list = [1, 2, 3, 4];
+  const result = await list.map(async function(val) {
+    return await add2(val);
+  });
+  console.log(result, 'async/await 2');
+  // [Promise, Promise, Promise, Promise] async/await 2
+}) ();
+</script>
+
+위 코드는 빠짐 없이 async/await를 넣은 것 같지만 원하는 결과가 나오지는 않았습니다. `Array.prototype.map`이 Promise를 지원하지 않기 때문입니다. async/await는 자바스크립트의 `forEach, map, filter, find` 등과 사용될 수 없습니다. 대부분의 함수형 자바스크립트 라이브러리들의 `map, filter, reduce, find`와도 사용할 수 없습니다. 명령형 코드들인 for, while 등과 사용해야만 비동기 제어가 가능합니다.
+
+비동기를 지원하는 함수를 async/await로 만들면 되지 않을까요? async/await만을 사용해서 만들게되면 성능 최적화가 될 수 없습니다. `async/await`를 만날 때마다 비동기가 일어나기 때문입니다.
+
+Functional.es의 방식은 다릅니다. Functional.es는 비동기가 일어나는 상황에만 선택적으로 비동기를 제어하고, 아닌 경우는 계속해서 동기적으로 동작합니다. 컬렉션에 담긴 값들 중 비동기를 일으킨 구간에선 비동기가 일어나지만 아닌 구간에선 하나의 콜 스택에서 동작합니다. 이런 전략은 많은 곳에서 훨씬 나은 결과를 만들 수 있게 합니다. 특히나 브라우저에서는 렌더링과 콜 스택이 연관이 있어, 더욱 중요합니다.
+
+또한 async/await는 병렬적으로 일어나는 일을 처리하지 못합니다. 하나씩 순차적으로 기다리면 되는 경우에만 사용할 수 있습니다. 동시성 프로그래밍을 안전하게 잘하기 위해서는 헬퍼 함수가 반드시 필요합니다.
+
+```javascript
+// users와 posts를 동시에 출발
+concurrency({
+  users: _=> query(...),
+  posts: _=> query(...)
+}).then(console.log);
+
+// await를 만날 때마다 하나씩 출발
+const res = {
+  users: await query(...),
+  posts: await query(...)
+}
+```
+
+위 코드의 `list.map`을 Functional.es의 `map`으로 바꾸기만하면 원하는 결과를 얻을 수 있습니다. `map`의 첫 번째 인자인 `f`가 Promise를 리턴하면 해당 작업을 기다리도록 되어 있기 때문입니다.
+
+<script>
+(async function() {
+  const list = [1, 2, 3, 4];
+  const result = await map(async function(val) {
+    return await add2(val);
+  }, list);
+  console.log(result, 'async/await 3');
+  // [3, 4, 5, 6] async/await 3
+}) ();
+</script>
+
+그런데 사실 `map`을 사용하면 위와 같이 복잡할 필요도 없습니다.
+
+<script>
+// Functional
+go([5, 6, 7, 8], map(add2), console.log);
+</script>
+
+명시적으로 비동기가 일어나는 구간을 표시하고 싶다면, 아래와 같이 가능합니다.
+
+<script>
+// Functional
+go([5, 6, 7, 8], map(async n => await add2(n)), console.log);
+</script>
+
+물론 표시할 수 있다는 점은 장점입니다. `Array.prototype.map`은 표시를 해도 동작하지 않습니다. 하지만 굳이 필요하지는 않다고 생각합니다.
+
+실무에서는 비동기가 일어날 상황이 보통 코드에서 보이기 때문입니다.
+
+```javascript
+go(userId,
+  or(
+    cachedUser, // 여기서 찾아지면 아래는 안가도 되고, 비동기 안일어남
+    fetchUser), // 비동기 일어남
+  renderUser,
+  ...
+  ...);
+```
+
+async/await를 표시하고나면 반드시 비동기가 일어나게 된다는 문제도 있습니다.
+
+## 더 많은 함수들
+
+Functional.es는 다음의 함수 등이 모두 동시성을 다룹니다.
+
+ - map, filter, reduce
+ - go, pipe
+ - or, and
+ - match
+ - cMap, concurrency, series
+ - find, findVal, some, every, none
+ - cFind, cFindVal, cSome, cEvery, cNone
+ - ...
+
+### or, and, match
+
+`or, and`는 || 와 &&를 함수적/비동기적으로 다루어야할 때 용이합니다. `match`는 비동기가 제어되고 조건부와 실행부에서 파이프라인을 간결하게 표현 가능하여 비동기 상황을 포함한 복잡한 분기를 간결하게 정리할 수 있습니다.
+
+### find 계열
+
+`find, some, evey, none` 등은 데이터베이스의 쿼리를 최소한으로 날려볼 수 있게 합니다. 하나씩 요청해보다가 결과를 만들어지면 바로 그 후 함수들은 평가하지 않습니다.
+
+<script>
+go([0, 0, 3000, 5000, 6000, 1000, 5000],
+  some(a => new Promise(function (resolve) {
+    setTimeout(function() { resolve(a); }, a);
+  })),
+  b => console.log(b, '<---------- 3초 정도 뒤'));
+// true <------ 3초 정도 뒤
+// - 0, 0, 3000에 해당하는 함수만 평가
+</script>
+
+`cFind, cSome, cEvery, cNone`는 `find, some, evey, none`와 거의 같지만, 모두 동시에 출발 시킨 후 먼저 온 결과들 중에 원하는 결과를 얻으면 나머지 결과는 기다리지 않고 끝냅니다.
+
+<script>
+go([0, 0, 3000, 5000, 6000, 1000, 5000],
+  cSome(a => new Promise(function (resolve) {
+    setTimeout(function() { resolve(a); }, a);
+  })),
+  b => console.log(b, '<----------- 1초 뒤'));
+// true <----------- 1초 뒤
+// - 모든 값에 해당하는 함수 평가
+// - 1000이 가장 먼저 결과를 만들어서 1초 뒤 결과를 즉시 리턴하고, 나머지는 기다리지 않음
+</script>
+
+`find, some, evey, none`과 `cFind, cSome, cEvery, cNone`은 상황에 따라 다르게 필요합니다.
+
+```javascript
+some(pipe(get, isBlah), [{ ... }, { ... }, { ... }]);
+// - 하나씩 시도
+// - 만일 첫 번째에서 참을 만들면 뒤에 2개는 디비 요청을 하지 않음
+
+cSome(pipe(get, isBlah), [{ ... }, { ... }, { ... }]);
+// - 동시에 3개 모두 디비 요청
+// - 먼저 온 결과를 통해 참을 만들면 나머지 결과를 더 기다리지 않고 다음으로 넘어감
+```
+
+### 정리
+
+함수형 프로그래밍은 평가 시점이 상관 없는 순수한 함수를 원하는 시점에 평가하는식으로 복잡한 문제를 해결하면서도 효율성을 얻습니다. 안전하게 동작하는 효율적인 함수를 조합하여 만든 해결책은, 역시 안전하고 효율적일 가능성이 높습니다. 함수형 프로그래밍을 하면 안전하면서도 최적화된 로직을 훨씬 쉽게 구현할 수 있습니다.
+
+
+</body>
+</html>

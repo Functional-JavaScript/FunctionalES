@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>memoize</title>
+  <script src="../function.js"></script>
+</head>
+<body>
+<script>
+var log = console.log;
+
+const val = memoize(function(obj) {
+  console.log('함수 본체 실행');
+  return obj.val;
+});
+function f1() {
+  const a = { val: 10 };
+  const b = { val: 20 };
+  console.log( val(a) );
+  // 함수 본체 실행
+  // 10
+  console.log( val(a) );
+  // 10
+
+  console.log( val(b) );
+  // 함수 본체 실행
+  // 10
+  console.log( val(b) );
+  // 10
+  console.log( val(b) );
+  // 10
+}
+
+f1();
+</script>
+
+<script>
+function get(key, obj) {
+  console.log('get 본체!');
+  return arguments.length == 1 ?
+    obj => get(key, obj) :
+    obj[key];
+}
+
+const u = { name: 'id', age: 34 };
+log( get('name', u) );
+// get 본체!
+// id
+log( get('name', u) );
+// get 본체!
+// id
+log( get('age', u) );
+// get 본체!
+// 34
+log( get('age', u) );
+// get 본체!
+// 34
+
+const name = memoize(get('name')), age = memoize(get('age'));
+
+log( name(u) );
+// get 본체!
+// id
+log( name(u) );
+// id
+log( age(u) );
+// get 본체!
+// 34
+log( age(u) );
+// 34
+</script>
+
+<script>
+function simpleRange(n) {
+  return [...Array(n).keys()];
+}
+
+const nums = simpleRange(10000);
+console.time();
+log( reduce((a, b) => a + b, nums) );
+// 결과: 49995000
+console.timeEnd();
+// 소요 시간: 2.003173828125ms
+
+console.time();
+log( reduce((a, b) => a + b, nums) );
+// 결과: 49995000
+console.timeEnd();
+// 소요 시간: 3.111083984375ms
+
+const addAll = memoize(reduce((a, b) => a + b));
+console.time();
+log( addAll(nums) );
+// 결과: 49995000
+console.timeEnd();
+// 소요 시간: 2.603173828125ms
+
+console.time();
+log( addAll(nums) );
+// 결과: 49995000
+console.timeEnd();
+// 소요 시간: 0.063173828125ms
+
+const nums2 = simpleRange(1000000);
+console.time();
+log( addAll(nums2) );
+// 결과: 499999500000
+console.timeEnd();
+// 소요 시간: 82.6181640625ms
+
+console.time();
+log( addAll(nums2) );
+// 결과: 499999500000
+console.timeEnd();
+// 소요 시간: 0.083173828125ms
+</script>
+
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <script>
+
+
+// call :: (a -> b) -> a -> b
+function call(f, a) {
+  return f(a);
+}
+
+
+function callP(f, p) {
+  return p instanceof Promise ? p.then(f) : f(p);
+}
+
+var fn1 = () => -100;
+var fn2 = () => Promise.resolve(-100);
+
+
+
+var a1 = 10;
+var a2 = Promise.resolve(10);
+
+function log(arg) {
+  return callP(console.log, arg);
+}
+
+function abs(num) {
+  return callP(Math.abs, num);
+}
+
+function abs2(num) {
+  return callP(n => Promise.resolve(Math.abs(n)), num);
+}
+
+log(abs(a1));
+// 10
+log(abs(a2));
+// 10
+log(abs2(a2));
+// 10
+
+log(abs(fn1()));
+// 100
+log(abs(fn2()));
+// 100
+
+
+
+function callP(f, p) {
+  return p instanceof Promise ? p.then(f) : f(p);
+}
+
+function unwrapF(f) {
+  return function(a) {
+    return callP(f, a);
+  }
+}
+
+var add10 = unwrapF(function(a) {
+  return a + 10;
+});
+
+var log = unwrapF(console.log);
+
+log( add10(Promise.resolve(200)) );
+// 210
+
+log( add10(300) );
+// 310
+
+
+  </script>
+</head>
+<body>
+
+</body>
+</html>

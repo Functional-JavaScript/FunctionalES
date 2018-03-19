@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <script src="function.js"></script>
+  <script></script>
+
+  <script>
+    const user = {};
+    console.log( user.name ); // undefined
+    console.log( user.name.length ); // Error
+  </script>
+  <script>
+    const alt = (val, defaultValue) => val === undefined ? defaultValue : val;
+    const get = key => (obj, defaultValue) => alt(obj && obj[key], defaultValue);
+    const name = get('name');
+    const length = get('length');
+
+    console.log( length(name(user)) ); // undefined (no err)
+    console.log( name(user, 'NO NAME') ); // NO NAME
+    console.log( length(name(user), 0) ); // 0
+
+    const todo1 = {};
+    const todo2 = { completed_at: null };
+    const todo3 = { completed_at: 'Mon Feb 05 2018 20:47:51 GMT+0900 (KST)' };
+    const id = get('id');
+    const completed_at = get('completed_at');
+    console.log( id(todo1) ); // undefined
+    console.log( completed_at(todo2) ); // null
+    console.log( completed_at(todo3) ); // Mon Feb 05 2018 20:47:51 GMT+0900 (KST)
+  </script>
+</head>
+<body>
+
+</body>
+</html>

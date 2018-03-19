@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <script src="../function.js"></script>
+
+  <script>
+function repeat(count, f) {
+  while (count--) f();
+}
+function simpleRange(n) {
+  return [...Array(n).keys()];
+}
+var l1 = simpleRange(100000);
+
+function test1(list) {
+  var l = list.length, i = -1, val;
+  while (++i < l) {
+    val = list[i];
+    if (val instanceof Promise) return;
+  }
+}
+
+function test2(list) {
+  var l = list.length, i = -1, val;
+  while (++i < l) {
+    val = list[i];
+    if (val && val.constructor == Promise) return;
+  }
+}
+
+function test3(list) {
+  var l = list.length, i = -1, val;
+  while (++i < l) {
+    val = list[i];
+    if (val && typeof val.then == 'function') return;
+  }
+}
+
+function test4(list) {
+  var l = list.length, i = -1, val;
+  while (++i < l) {
+    val = list[i];
+  }
+}
+
+console.time();
+repeat(1000, ()=>test1(l1));
+console.timeEnd();
+
+console.time();
+repeat(1000, ()=>test2(l1));
+console.timeEnd();
+
+console.time();
+repeat(1000, ()=>test3(l1));
+console.timeEnd();
+
+console.time();
+repeat(1000, ()=>test4(l1));
+console.timeEnd();
+
+// 모두 90ms 정도의 시간이 나옵니다.
+
+  </script>
+
+
+</head>
+<body>
+
+
+
+</body>
+</html>

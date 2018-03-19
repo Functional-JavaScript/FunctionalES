@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <script src="../function.js"></script>
+</head>
+<body>
+
+<script>
+function call(f, arg) {
+  return f(arg);
+}
+function callRight(arg, f) {
+  return f(arg);
+}
+console.log( call(a => a + 10, 10) );
+// 20
+
+console.log( callRight(5, a => a + 10) );
+// 15
+
+function go(arg, f) {
+  return reduce(callRight, arguments);
+}
+
+function pipe(...fs) {
+  return function(arg) {
+    return reduceAcc(callRight, arg, fs);
+  }
+}
+
+go(10,
+  a => a + 10,
+  a => a - 5,
+  console.log);
+// 15
+
+var f1 = pipe(
+  a => a + 10,
+  a => a - 5,
+  console.log);
+
+f1(5);
+// 10
+f1(20);
+// 25
+</script>
+
+<script>
+go(10,
+  a => new Promise(function(resolve) {
+    setTimeout(function() {
+      resolve(a + 10);
+    }, 1000)
+  }), // 1 초뒤 아래로 내려감
+  a => a - 5,
+  console.log);
+// 15
+
+var f1 = pipe(
+  a => a + 10,
+  a => Promise.resolve(a - 5), // 여기도 비동기 발생
+  console.log);
+
+f1(5);
+// 10
+f1(20);
+// 25
+
+go(Promise.resolve(200), // 시작 인자가 Promise여도 풀려서 내려감
+  a => a + 10,
+  a => a - 5,
+  console.log);
+// 205
+</script>
+
+<script>
+var f3 = pipe(
+  a => a + 10,
+  a => Promise.resolve(a + 10));
+
+var f4 = pipe(
+  a => a - 10,
+  a => Promise.resolve(a - 10));
+
+go(Promise.resolve(100),
+  f3,
+  f4,
+  console.log);
+// 100
+</script>
+
+<script>
+console.log( go(10, a => a + 10, a => a - 5) );
+// 15
+
+console.log( go(10, a => Promise.resolve(a + 10), a => a - 5) );
+// Promise [[PromiseValue]] 15
+</script>
+
+<script>
+function callTp(f, arg) {
+  return callTpRight(arg, f);
+}
+
+function callTpRight(arg, f) {
+  return arg instanceof Tuple ? f(...arg) : f(arg);
+}
+
+function go(arg, f) {
+  return Array.isArray(f) ?
+    reduceAcc(callTpRight(), arg, f) :
+    reduce(callTpRight, arguments);
+}
+
+function pipe(f) {
+  var fs = Array.isArray(f) ? f : arguments;
+  return function() {
+    return reduceAcc(callTpRight, toTuple(arguments), fs);
+  }
+}
+</script>
+
+<script>
+go(300,
+  a => tuple(a + 10, 5),
+  (a, b) => a - b,
+  console.log);
+  // 305
+</script>
+
+<script>
+go(400,
+  a => tuple(Promise.resolve(a + 10), Promise.resolve(5)),
+  (a, b) => a - b,
+  console.log);
+  // 405
+</script>
+
+<script>
+const add = pipe((a, b) => a + b);
+var tp = tuple(5, 2);
+console.log( add(tp) );
+// 7
+console.log( add(10, 20) );
+// 30
+</script>
+
+<script>
+function go(arg, f) {
+  return Array.isArray(f) ?
+    reduceAcc(callTpRight, arg, f) :
+    reduce(callTpRight, arguments);
+}
+
+function pipe(f) {
+  var fs = Array.isArray(f) ? f : arguments;
+  return function() {
+    return reduceAcc(callTpRight, toTuple(arguments), fs);
+  }
+}
+
+console.log( go(1000, [a=>a+10, a=>a-10, a=>a-10]) );
+// 1000
+
+console.log( pipe([a=>a+10, a=>a-10])(2000) );
+// 2000
+</script>
+
+</body>
+</html>

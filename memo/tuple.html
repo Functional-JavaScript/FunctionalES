@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <script src="../function.js"></script>
+  <script>
+    console.log(...tuple(1, 2, 3));
+    // 1 2 3
+    console.log(...toTuple([1, 2, 3]));
+    // 1 2 3
+    console.log( isTuple(tuple(1, 2, 3)) );
+    // true
+
+    tuple(Promise.resolve(1), Promise.resolve(2))
+      .then(tp => console.log(...tp));
+      // 1 2
+
+    tuple(Promise.resolve(1), Promise.resolve(2))
+      .then(tp => console.log(isTuple(tp)));
+      // true
+  </script>
+</head>
+<body>
+
+</body>
+</html>

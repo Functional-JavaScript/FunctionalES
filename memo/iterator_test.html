@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <script src="../function.js"></script>
+
+  <script>
+function repeat(count, f) {
+  while (count--) f();
+}
+function simpleRange(n) {
+  return [...Array(n).keys()];
+}
+var s1 = new Set(simpleRange(10));
+var s2 = new Set(simpleRange(1000));
+var l1 = simpleRange(1000);
+
+function test1(s) {
+  var list = [...s], l = list.length, i = -1, val;
+  while (++i < l) {
+    val = list[i];
+  }
+}
+
+function test2(s) {
+  var iter = s.values(), cur, val;
+  while (!(cur = iter.next()).done) {
+    val = cur.value;
+  }
+}
+
+function test1(s) {
+  var list = [...s], l = list.length, i = -1, val;
+  while (++i < l) {
+    val = list[i];
+  }
+}
+
+function test3(s) {
+  var list = s, l = list.length, i = -1, val;
+  while (++i < l) {
+    val = list[i];
+  }
+}
+
+function test4(s) {
+  var iter = s[Symbol.iterator](), cur, val;
+  while (!(cur = iter.next()).done) {
+    val = cur.value;
+  }
+}
+
+console.time();
+repeat(1000, ()=>test3(l1));
+console.timeEnd();
+// 44ms
+
+console.time();
+repeat(1000, ()=>test4(l1));
+console.timeEnd();
+
+
+/*console.time();
+repeat(1000, ()=>test1(s1));
+console.timeEnd();
+// 1ms ~ 2ms
+
+console.time();
+repeat(1000, ()=>test1(s2));
+console.timeEnd();
+// 44ms
+
+console.time();
+repeat(1000, ()=>test2(s1));
+console.timeEnd();
+// 0.8ms ~ 0.9ms
+
+console.time();
+repeat(1000, ()=>test2(s2));
+console.timeEnd();
+// 2ms ~ 3ms*/
+
+
+  </script>
+
+
+</head>
+<body>
+
+
+
+</body>
+</html>

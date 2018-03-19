@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <script src="../function.js"></script>
+
+  <script>
+    const log = console.log;
+    const add = (a, b) => a + b;
+
+    log( reduce(add, [1, 2, 3]) );
+    log( reduce(add)([1, 2, 3]) );
+    log( reduce(add, { 0: 1, 1: 2, 2: 3, length: 3}) );
+    log( reduce(add, new Set([1, 2])) );
+
+    log( reduceAcc(add, 10, [1, 2, 3]) );
+    log( reduceAcc(add)(10)(new Set([1, 2, 3])) );
+    log( reduceAcc(add, 10)(new Map([['a', 1], ['b', 2], ['c', 3]])) );
+    log( reduceAcc(add)(10, { 0: 1, 1: 2, 2: 3, length: 3}) );
+
+    log('promise --------- ');
+
+    const addP = (a, b) => Promise.resolve(a + b);
+
+    reduce(addP)([1, 2, 3]).then(log);
+    reduce(addP, new Set([1, 2, 3])).then(log);
+
+    reduceAcc(addP, 10, [1, 2, 3]).then(log);
+    reduceAcc(add, Promise.resolve(10), new Set([1, 2, 3])).then(log);
+    reduceAcc(addP, Promise.resolve(10), new Set([1, 2, 3])).then(log);
+  </script>
+
+
+</head>
+<body>
+
+
+
+</body>
+</html>
