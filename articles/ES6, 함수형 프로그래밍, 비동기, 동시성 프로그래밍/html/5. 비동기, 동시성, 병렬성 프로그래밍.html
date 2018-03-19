@@ -528,13 +528,25 @@ const res1 = awiat concurrency({
   users: _=> query(...),
   posts: _=> query(...)
 });
+//{
+//  users: [row, row, row, ...]
+//  posts: [row, row, row, ...]
+//}
 
 // await를 만날 때마다 하나씩 출발
 const res2 = {
   users: await query(...),
   posts: await query(...)
 }
+//{
+//  users: [row, row, row, ...]
+//  posts: [row, row, row, ...]
+//}
 ```
+
+<script>
+
+</script>
 
 위 코드의 `list.map`을 Functional.es의 `map`으로 바꾸기만하면 원하는 결과를 얻을 수 있습니다. `map`의 첫 번째 인자인 `f`가 Promise를 리턴하면 해당 작업을 기다리도록 되어 있기 때문입니다.
 
