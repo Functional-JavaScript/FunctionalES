@@ -51,6 +51,7 @@
     - 쇼트트랙 계주 - 순서대로 실행하기
     - 동시적으로 혹은 순차적으로
     - async/await는 은총알인가?
+    - 병렬적으로 동작할 수 없는 async/await
     - 더 많은 함수들
 6. [예외 처리](https://github.com/Functional-JavaScript/functional.es/blob/master/articles/ES6%2C%20%ED%95%A8%EC%88%98%ED%98%95%20%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D%2C%20%EB%B9%84%EB%8F%99%EA%B8%B0%2C%20%EB%8F%99%EC%8B%9C%EC%84%B1%20%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D/6.%20%EC%98%88%EC%99%B8%20%EC%B2%98%EB%A6%AC.md)
     - ES6+의 3가지 예외
