@@ -305,15 +305,15 @@
   const root = typeof global == 'object' ? global : window;
   root.Functional = {
     curry2,
-    then,
-    log,
-    ObjIter, hasIter,
+    then, identity, noop,
+    ObjIter, valuesIter, stepIter, hasIter, isObject,
     map, cMap, series, concurrency,
     reduce,
     go, pipe,
     findVal, find, some, none, every,
     cFindVal, cFind, cSome, cNone, cEvery,
     match, or, and,
-    each
+    Tuple, tuple, toTuple, callRight,
+    each, log
   };
 } ();

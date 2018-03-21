@@ -89,11 +89,11 @@
 
   const hurdles = map(
     name => function(...fs2) { return hurdle(...this._fs)[name](...fs2) }, {
-    nullable: 'nullable',
-    error: 'error',
-    exception: 'exception',
-    complete: 'complete',
-  });
+      nullable: 'nullable',
+      error: 'error',
+      exception: 'exception',
+      complete: 'complete',
+    });
 
   const each = curry2((f, coll) => reduce((_, val) => f(val), null, coll));
 
@@ -305,15 +305,15 @@
   const root = typeof global == 'object' ? global : window;
   root.Functional = {
     curry2,
-    then,
-    log,
-    ObjIter, hasIter,
+    then, identity, noop,
+    ObjIter, valuesIter, stepIter, hasIter, isObject,
     map, cMap, series, concurrency,
     reduce,
     go, pipe,
     findVal, find, some, none, every,
     cFindVal, cFind, cSome, cNone, cEvery,
     match, or, and,
-    each
+    Tuple, tuple, toTuple, callRight,
+    each, log
   };
 } ();
