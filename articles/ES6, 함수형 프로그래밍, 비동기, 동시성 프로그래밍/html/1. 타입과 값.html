@@ -33,7 +33,7 @@
  - object
  - symbol
 
-위 타입은 다시 크게 두 가지로 나눌 수 있습니다. 객체와 객체가 아닌 것입니다. 위 7가지 타입에서 객체를 제외한 모든 값은 원시 값이며, 원시 값의 경우 인자로 전달하거나 할당할 때 항상 값 복사가 이루어지고, 객체의 경우는 항상 레퍼런스 사본을 만듭니다.
+위 타입은 다시 크게 두 가지로 나눌 수 있습니다. 객체(object)와 객체가 아닌 것입니다. 위 7가지 타입에서 객체를 제외한 모든 값은 원시 값이며, 원시 값의 경우 인자로 전달하거나 할당할 때 항상 값 복사가 이루어지고, 객체의 경우는 항상 레퍼런스 사본을 만듭니다.
 
 <script>
 const log = console.log;
@@ -41,14 +41,17 @@ const log = console.log;
 var a = 10;
 function f1(a2) {
   a2 = 5;
-  log(a, a2); // 10, 5
+  log(a2); // 5
+  log(a); // 10
 }
 f1(a);
 
 const obj = { value: 10 };
 function f2(obj2) {
   obj2.value = 5;
-  log(obj, obj2); // { value: 5 }, { value: 5 }
+  log(obj2); // { value: 5 }
+  log(obj); // { value: 5 }
+  log(obj == obj2); // true
 }
 f2(obj);
 </script>
@@ -107,7 +110,7 @@ JSON.stringify(new Map([['a', 1]]));
 
 ES6에는 Iterable/Iterator에 대한 프로토콜이 있고, 그것은 ES6에서 매우 중요합니다. 자바스크립트에서 Iterable, Iterator, Symbol.iterator, Generator 등은 자바스크립트의 `for...of` 문이나 전개 연산자 등과 사용됩니다. 이것들은 ES6에서 함수형 프로그래밍을 하는 것에 있어서도 아주 중요한 역할을 합니다.
 
-ES6은 String, Array, Map, Set 등의 내장 iterables를 가지고 있습니다.
+ES6의 String, Array, Map, Set 등은 아래와 같이 사용가능하도록 Symbol.iterator 프로퍼티를 가진 객체입니다.
 
 <script>
 for (const val of [1, 2]) log(val);
