@@ -221,25 +221,31 @@
   const series = map(a => a());
   const concurrency = cMap(a => a());
 
-  const cFindVal = curry2((f, coll) => {
-    const iter = valuesIter(coll);
-    var t = 0, r = 0;
-    return function() {
-      return new Promise(function(resolve) {
+  const thenCatch = (f, catchF, a) => {
+    try { return a instanceof Promise ? a.then(f, catchF) : f(a) }
+    catch (e) { return catchF(e); }
+  };
+
+  const findValC = curry2((f, coll, limit = Infinity) => {
+    const iter = stepIter(coll, limit);
+    return new Promise(function(resolve, reject) {
+      !function recur() {
+        var t = 0, r = 0;
         for (const a of iter) {
-          ++t, then(
-            b => b === undefined ? t == ++r ? resolve() : undefined : resolve(b),
+          ++t, thenCatch(
+            b => b === undefined ? t == ++r && iter.remain && recur() : resolve(b),
+            reject,
             f(a));
         }
-      })
-    } ();
+      } ();
+    });
   });
 
-  const cFind = curry2((f, coll) =>
-    cFindVal(a => go(a, f, b => b ? a : undefined), coll));
-  const cSome = curry2(pipe(cFind, isAny));
-  const cNone = curry2(pipe(cFind, isUndefined));
-  const cEvery = curry2((f, coll) => go(coll, cFind(pipe(f, not)), isUndefined));
+  const findC = curry2((f, coll, limit) =>
+    findValC(a => go(a, f, b => b ? a : undefined), coll, limit));
+  const someC = curry2(pipe(findC, isAny));
+  const noneC = curry2(pipe(findC, isUndefined));
+  const everyC = curry2((f, coll, limit) => go(findC(pipe(f, not), coll, limit), isUndefined));
 
   function hurdle(...fs) {
     var errorF, nullableF, completeF, exceptions = [];
@@ -311,7 +317,7 @@
     reduce,
     go, pipe,
     findVal, find, some, none, every,
-    cFindVal, cFind, cSome, cNone, cEvery,
+    findValC, findC, someC, noneC, everyC,
     match, or, and,
     Tuple, tuple, toTuple, callRight,
     each, log
