@@ -5,6 +5,10 @@
 
   const log = console.log;
 
+  const identity = a => a;
+
+  function noop() {}
+
   const ObjIter = curry2((generator, coll, iter = generator(coll)) => {
     return { next: _=> iter.next(), [Symbol.iterator]() { return this } }
   });
@@ -63,24 +67,39 @@
     return arg instanceof Tuple ? f(...arg) : arg === undefined ? f() : f(arg);
   }
 
+  const mfReduce = (f1, f2, f3) => (f, coll) =>
+    coll instanceof Map ? reduce(f1(f), new Map, coll.entries())
+    :
+    hasIter(coll) ? reduce(f2(f), [], coll)
+    :
+    isObject(coll) ? reduce(f3(f), {}, ObjIter.entries(coll))
+    :
+    []
+  ;
+
+  const _map = mfReduce(
+    f => (m, [k, v]) => go(f(v), v => m.set(k, v)),
+    f => (arr, v) => go(f(v), v => (arr.push(v), arr)),
+    f => (o, [k, v]) => go(f(v), v => (o[k] = v, o)));
+
   const map = curry2((f, coll) =>
-    coll instanceof Function ?
-      pipe(coll, f)
+    coll instanceof Function ? pipe(coll, f)
     :
-    coll instanceof Promise ?
-      coll.then(f)
+    coll instanceof Promise ? coll.then(f)
     :
-    coll instanceof Map ?
-      reduce((m, [k, v]) => go(f(v), v => m.set(k, v)), new Map, coll.entries())
-    :
-    hasIter(coll) ?
-      reduce((arr, v) => go(f(v), v => (arr.push(v), arr)), [], coll)
-    :
-    isObject(coll) ?
-      reduce((o, [k, v]) => go(f(v), v => (o[k] = v, o)), {}, ObjIter.entries(coll))
-    :
-    [] // else
+    _map(f, coll)
   );
+
+  const filter = curry2(mfReduce(
+    f => (m, [k, v]) => go(f(v), b => b ? m.set(k, v) : m),
+    f => (arr, v) => go(f(v), b => (b && arr.push(v), arr)),
+    f => (o, [k, v]) => go(f(v), b => (b && (o[k] = v), o))));
+
+  const reject = curry2((f, coll) => filter(negate(f), coll));
+
+  const compact = filter(identity);
+
+  const negate = f => pipe(f, not);
 
   const go = (..._) => reduce(callRight, _);
 
@@ -116,7 +135,7 @@
   const none = curry2(pipe(find, isUndefined));
 
   const not = a => !a;
-  const every = curry2((f, coll) => go(coll, find(pipe(f, not)), isUndefined));
+  const every = curry2((f, coll) => go(coll, find(negate(f)), isUndefined));
 
   function match(...targets) {
     var cbs = [];
@@ -188,10 +207,6 @@
     return res;
   });
 
-  const identity = a => a;
-
-  function noop() {}
-
   const pAall = l => Promise.all(l);
 
   function mapCReduce(acc, iter, mapF, extendF) {
@@ -245,7 +260,7 @@
     findValC(a => go(a, f, b => b ? a : undefined), coll, limit));
   const someC = curry2(pipe(findC, isAny));
   const noneC = curry2(pipe(findC, isUndefined));
-  const everyC = curry2((f, coll, limit) => go(findC(pipe(f, not), coll, limit), isUndefined));
+  const everyC = curry2((f, coll, limit) => go(findC(negate(f), coll, limit), isUndefined));
 
   function hurdle(...fs) {
     var errorF, nullableF, completeF, exceptions = [];
@@ -314,12 +329,14 @@
     then, identity, noop,
     ObjIter, valuesIter, stepIter, hasIter, isObject,
     map, mapC, series, concurrency,
+    filter, reject, compact,
     reduce,
     go, pipe,
     findVal, find, some, none, every,
     findValC, findC, someC, noneC, everyC,
     match, or, and,
     Tuple, tuple, toTuple, callRight,
+    negate, not, isAny, isUndefined,
     each, log
   };
 } ();
