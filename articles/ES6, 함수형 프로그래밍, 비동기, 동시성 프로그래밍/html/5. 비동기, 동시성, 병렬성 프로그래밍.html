@@ -5,7 +5,7 @@
   <title>5. 비동기, 동시성, 병렬성 프로그래밍</title>
   <script src="functional.es.js"></script>
   <script>
-    const { curry2, pipe, go, map, cMap, each, someC, some } = Functional;
+    const { curry2, pipe, go, map, mapC, each, someC, some } = Functional;
   </script>
 </head>
 <body>
@@ -21,7 +21,7 @@
 - then에 커링 적용하기
 - 파이프라인
 - 이미지 동시에 모두 불러온 후 DOM에 반영하기
-- cMap과 limit
+- mapC와 limit
 - 쇼트트랙 계주 - 순서대로 실행하기
 - 동시적으로 혹은 순차적으로
 - async/await는 은총알인가?
@@ -252,16 +252,16 @@ Promise.all(
 
 // Functional
 go(urls,
-  cMap(loadImage),
+  mapC(loadImage),
   each(img => el2.appendChild(img)));
 </script>
 
 두 코드 모두 동일한 결과를 만들지만, Functional한 코드가 더욱 간결하고 읽기 좋습니다. 위에서부터 아래로 읽어내려가면 됩니다. Promise.all을 쓴 코드의 경우 코드가 순서대로 읽히지는 않습니다.
 
-`cMap`을 간단하게 구현하면 다음과 같습니다. `cMap`은 비동기 상황 모드를 동시에 출발 시킨 후 결과를 완성해갑니다.
+`mapC`를 간단하게 구현하면 다음과 같습니다. `mapC`는 비동기 상황 모드를 동시에 출발 시킨 후 결과를 완성해갑니다.
 
 <script type="module">
-const cMap = curry2((f, coll) =>
+const mapC = curry2((f, coll) =>
   map(([a]) => a,
     map(a => [f(a)], coll)));
 
@@ -270,24 +270,24 @@ go([1, 2, 3],
   console.log); // 3초 뒤 [11, 12, 13]
 
 go([4, 5, 6],
-  cMap(add10),
+  mapC(add10),
   console.log); // 1초 뒤 [14, 15, 16]
 
 go({ a: 7, b: 8, c: 9 },
-  cMap(add10),
+  mapC(add10),
   console.log); // 1초 뒤 { a: 17, b: 18, c: 19 }
 
 go(new Map([['a', 10], ['b', 11], ['c', 12]]),
-  cMap(add10),
+  mapC(add10),
   console.log); // 1초 뒤 Map(3) {"a" => 20, "b" => 21, "c" => 22}
 </script>
 
-## cMap과 limit
+## mapC와 limit
 
-크기가 아주 큰 배열을 가지고 부하가 큰 작업을 `cMap`으로 돌리게되면 문제가 생길 수 있습니다. Functional.es의 `cMap`은 `limit`을 통해 `cMap`이 동시에 처리할 크기를 정할 수 있습니다. 이러한 로직이 꼭 필요한 상황이 있습니다.
+크기가 아주 큰 배열을 가지고 부하가 큰 작업을 `mapC`로 돌리게되면 문제가 생길 수 있습니다. Functional.es의 `mapC`는 `limit`을 통해 `mapC`가 동시에 처리할 크기를 정할 수 있습니다. 이러한 로직이 꼭 필요한 상황이 있습니다.
 
 <script type="module">
-const { cMap } = Functional;
+const { mapC } = Functional;
 
 let start;
 const reset = _ => start = new Date();
@@ -302,7 +302,7 @@ const add10 = a => new Promise(function(resolve) {
 
 pipe(
   reset,
-  _ => cMap(add10, [1, 2, 3, 4, 5, 6], 2),
+  _ => mapC(add10, [1, 2, 3, 4, 5, 6], 2),
   a => console.log(`끝난 시간: ${check()}초 뒤`, a),
   // 들어온시간: 0초 뒤
   // 들어온시간: 0초 뒤
@@ -313,7 +313,7 @@ pipe(
   // 끝난 시간: 3초 뒤 (6) [11, 12, 13, 14, 15, 16]
 
   reset,
-  _ => cMap(add10, { a: 11, b: 12, c: 13, d: 14, e: 15}, 3),
+  _ => mapC(add10, { a: 11, b: 12, c: 13, d: 14, e: 15}, 3),
   a => console.log(`끝난 시간: ${check()}초 뒤`, a)
   // 들어온시간: 0초 뒤
   // 들어온시간: 0초 뒤
@@ -324,7 +324,7 @@ pipe(
 ) ();
 </script>
 
-`cMap`의 세 번째 인자인 `limit`만 정해주면 매우 간단하게 부하 정도를 조절할 수 있습니다. 이와 같은 코드를 명령형으로 작성하게되면, Promise, async/await를 사용하여도 매번 재귀, i++, if 등을 만나야합니다. 그에 비해 `cMap`은 매우 쉽고 안전하며, 다형성을 지원하여 배열 외에도 모든 컬렉션을 병렬적으로 다룰 수 있습니다.
+`mapC`의 세 번째 인자인 `limit`만 정해주면 매우 간단하게 부하 정도를 조절할 수 있습니다. 이와 같은 코드를 명령형으로 작성하게되면, Promise, async/await를 사용하여도 매번 재귀, i++, if 등을 만나야합니다. 그에 비해 `mapC`는 매우 쉽고 안전하며, 다형성을 지원하여 배열 외에도 모든 컬렉션을 병렬적으로 다룰 수 있습니다.
 
 자바스크립트에서 왠 병렬이냐고 생각하실 수 있습니다. 하지만 실무에서는 데이터베이스도 사용하고, 이미지 처리(crop, resize ...) 등 네트워크를 기반으로한 다양한 기술을 사용하게 됩니다. 요즘에는 서비스 하나에서 두 개 이상의 데이터베이스를 사용하는 것도 일반적입니다. NodeJS 프로그래밍을 할 때, 다양한 처리를 동시적으로 안전하게 위임할 수 있다면, 빠른 사용자 응답을 보다 쉽게 구현할 수 있습니다.
 
@@ -394,7 +394,7 @@ async function semifinal(teams) {
 
 // Functional
 const final = pipe(
-  cMap(({skaters, name}) => go(
+  mapC(({skaters, name}) => go(
     each(skate, skaters),
     _=> console.log(`${name}팀 결승선 통과!`))),
   _=> console.log('결승 종료!'));
@@ -433,7 +433,7 @@ setTimeout(function() {
 
 `concurrency`와 `series`는 원하는 자료구조를 함수 실행을 통해 만들기 위해 사용합니다. 특히 비동기 상황에서 실용적으로 사용될 수 있습니다. 데이터베이스에서 두 개의 테이블을 통해 값을 얻어온다던지 할 때 사용하면 용이합니다.
 
-`concurrency`와 `series`가 푸는 문제는 서로 약간은 다릅니다. 개발자는 이것을 선택하기만 하면 됩니다. `concurrency`와 `series`도 각각 `cMap`과 `map`으로 구현되어있습니다. 함수형 프로그래밍은 이미 해결한 문제와 조금은 다른 문제들을 기존의 구현된 함수와 새로운 함수의 조합으로 해결해나갑니다.
+`concurrency`와 `series`가 푸는 문제는 서로 약간은 다릅니다. 개발자는 이것을 선택하기만 하면 됩니다. `concurrency`와 `series`도 각각 `mapC`와 `map`으로 구현되어있습니다. 함수형 프로그래밍은 이미 해결한 문제와 조금은 다른 문제들을 기존의 구현된 함수와 새로운 함수의 조합으로 해결해나갑니다.
 
 <script type="module">
 function numP(a) {
@@ -444,7 +444,7 @@ function numP(a) {
   });
 }
 
-const concurrency = cMap(a => a());
+const concurrency = mapC(a => a());
 const series = map(a => a());
 
 concurrency([
@@ -598,7 +598,7 @@ Functional.es는 다음의 함수 등이 모두 동시성을 다룹니다.
  - go, pipe
  - or, and
  - match
- - cMap, concurrency, series
+ - mapC, concurrency, series
  - find, findVal, some, every, none
  - findC, findValC, someC, everyC, noneC
  - ...
@@ -634,7 +634,7 @@ go([0, 0, 3000, 5000, 6000, 1000, 5000],
 // - 1000이 가장 먼저 결과를 만들어서 1초 뒤 결과를 즉시 리턴하고, 나머지는 기다리지 않음
 </script>
 
-`find, some, evey, none`과 `findC, someC, everyC, noneC`은 상황에 따라 다르게 필요합니다.
+`find, some, evey, none`과 `findC, someC, everyC, noneC`는 상황에 따라 다르게 필요합니다.
 
 ```javascript
 some(pipe(get, isBlah), [{ ... }, { ... }, { ... }]);

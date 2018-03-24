@@ -194,32 +194,32 @@
 
   const pAall = l => Promise.all(l);
 
-  function cMapReduce(acc, iter, mapF, extendF) {
+  function mapCReduce(acc, iter, mapF, extendF) {
     return go(mapIter(mapF, iter), pAall, l => extendF(acc, l),
-      _=> iter.remain ? cMapReduce(acc, iter, mapF, extendF) : acc);
+      _=> iter.remain ? mapCReduce(acc, iter, mapF, extendF) : acc);
   }
 
   const setPair = f => pair => go(pair[1], f, v => (pair[1] = v, pair));
 
-  const cMap = curry2((f, coll, limit = Infinity) =>
+  const mapC = curry2((f, coll, limit = Infinity) =>
     coll instanceof Map ?
-      cMapReduce(new Map, stepIter(coll.entries(), limit),
+      mapCReduce(new Map, stepIter(coll.entries(), limit),
         setPair(f), (acc, l) => l.forEach(([k, v]) => acc.set(k, v)))
     :
     hasIter(coll) ?
       limit == Infinity ?
         pAall(mapIter(f, coll)) :
-        cMapReduce([], stepIter(coll, limit), f, (acc, l) => acc.push(...l))
+        mapCReduce([], stepIter(coll, limit), f, (acc, l) => acc.push(...l))
     :
     isObject(coll) ?
-      cMapReduce({}, stepIter(ObjIter.entries(coll), limit),
+      mapCReduce({}, stepIter(ObjIter.entries(coll), limit),
         setPair(f), (acc, l) => l.forEach(([k, v]) => acc[k] = v))
     :
     []
   );
 
   const series = map(a => a());
-  const concurrency = cMap(a => a());
+  const concurrency = mapC(a => a());
 
   const thenCatch = (f, catchF, a) => {
     try { return a instanceof Promise ? a.then(f, catchF) : f(a) }
@@ -313,7 +313,7 @@
     curry2,
     then, identity, noop,
     ObjIter, valuesIter, stepIter, hasIter, isObject,
-    map, cMap, series, concurrency,
+    map, mapC, series, concurrency,
     reduce,
     go, pipe,
     findVal, find, some, none, every,
