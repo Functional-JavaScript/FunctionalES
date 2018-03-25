@@ -206,7 +206,7 @@ for (const val of reverseIterator([1, 2])) log(val);
 앞서 `for (const val of reverseIterator([1, 2])) log(val);`에서는 에러가 발생했지만, iterator에 `[Symbol.iterator]()`를 구현하여 `for...of`에서 정상동작하게 되었습니다. 3, 4, 5를 잘 응용하면 `for...of`와 잘 동작하는 것을 넘어, 데이터 순회에 대한 매우 재밌고 새로운 해법들을 만들 수 있어 매우 중요합니다.
 
 <script>
-function *valuesIterator(obj) {
+function *valuesIter(obj) {
   for (const key in obj) yield obj[key];
 }
 const users = {
@@ -214,7 +214,7 @@ const users = {
   19: { id: 19, name: 'BX' },
   27: { id: 27, name: 'MD' }
 };
-for (const val of valuesIterator(users)) log(val.name);
+for (const val of valuesIter(users)) log(val.name);
 // YB
 // BX
 // MD
