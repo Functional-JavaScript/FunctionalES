@@ -64,3 +64,22 @@
     - 비동기를 지원하지 않는 함수에서 발생한 예외 처리 실패
     - 동기/비동기를 함께 지원하는 함수의 필요성
     - 정리
+
+- [부록. 클래스 없이 코딩하기](https://github.com/Functional-JavaScript/functional.es/blob/master/articles/ES6%2C%20%ED%95%A8%EC%88%98%ED%98%95%20%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D%2C%20%EB%B9%84%EB%8F%99%EA%B8%B0%2C%20%EB%8F%99%EC%8B%9C%EC%84%B1%20%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D/%EB%B6%80%EB%A1%9D.%20%ED%81%B4%EB%9E%98%EC%8A%A4%20%EC%97%86%EC%9D%B4%20%EC%BD%94%EB%94%A9%ED%95%98%EA%B8%B0.md)
+    - 나머지 매개변수와 전개 연산자, 그리고 부분 적용
+    - 장바구니
+    - 정리
+
+- [부록. 메모이제이션] (예정)
+
+- [부록. 튜플] (예정)
+
+- [부록. 템플릿 리터럴] (예정)
+
+- [부록. TODO App] (예정)
+
+- [...] (예정)
+
+- [부록. 질문 답변](https://github.com/Functional-JavaScript/functional.es/blob/master/articles/ES6%2C%20%ED%95%A8%EC%88%98%ED%98%95%20%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D%2C%20%EB%B9%84%EB%8F%99%EA%B8%B0%2C%20%EB%8F%99%EC%8B%9C%EC%84%B1%20%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D/%EB%B6%80%EB%A1%9D.%20%EC%A7%88%EB%AC%B8%20%EB%8B%B5%EB%B3%80.md)
+    - 이슈에 올라오거나 개인적으로 오는 질문 계속 추가할 예정입니다.
+
