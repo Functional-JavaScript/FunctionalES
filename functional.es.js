@@ -104,7 +104,7 @@
   const go = (..._) => reduce(callRight, _);
 
   const pipe = (..._fs) => Object.assign(
-    (..._) => reduce(callRight, tuple(..._), _fs), { _fs }, hurdles);
+    (..._) => reduce(callRight, toTuple(_), _fs), { _fs }, hurdles);
 
   const hurdles = map(
     name => function(...fs2) { return hurdle(...this._fs)[name](...fs2) }, {
@@ -233,8 +233,8 @@
     []
   );
 
-  const series = map(a => a());
-  const concurrency = mapC(a => a());
+  const series = (..._) => map(a => a(), ..._);
+  const concurrency = (..._) => mapC(a => a(), ..._);
 
   const thenCatch = (f, catchF, a) => {
     try { return a instanceof Promise ? a.then(f, catchF) : f(a) }

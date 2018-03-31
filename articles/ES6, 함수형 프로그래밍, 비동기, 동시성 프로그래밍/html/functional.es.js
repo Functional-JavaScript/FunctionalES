@@ -233,8 +233,8 @@
     []
   );
 
-  const series = map(a => a());
-  const concurrency = mapC(a => a());
+  const series = (..._) => map(a => a(), ..._);
+  const concurrency = (..._) => mapC(a => a(), ..._);
 
   const thenCatch = (f, catchF, a) => {
     try { return a instanceof Promise ? a.then(f, catchF) : f(a) }
