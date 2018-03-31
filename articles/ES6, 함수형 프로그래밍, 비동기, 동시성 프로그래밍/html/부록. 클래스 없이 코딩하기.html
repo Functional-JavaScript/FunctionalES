@@ -29,7 +29,7 @@
 
 기본적인 사례를 보면 다음과 같습니다.
 
-<script>
+<script type="module">
 function sub(a, b) {
   return a - b;
 }
@@ -43,7 +43,11 @@ console.log( sub10(30) ); // 20
 
 이번엔 `subAll`을 만든 후 부분 적용을 해보겠습니다.
 
-<script>
+<script type="module">
+function sub(a, b) {
+  return a - b;
+}
+
 const subAll = (...args) => reduce(sub, args);
 
 console.log( subAll(30, 10, 5) );
@@ -95,35 +99,7 @@ f5(1, 2, 3)(5, 6);
 
 장바구니의 담긴 상품들의 정보를 계산하는 로직을 클래스/객체 조합이 아닌 함수 조합으로 구현하면서 모듈화해보는 예제입니다. 함수 조합의 아이디어를 확인하기위해 최대한 작고 잘게 조개는 코드로 작성된 예제입니다.
 
-<script type="module">
-const calls = (fs, a) => map(f => f(a), fs);
-
-const add = (a, b) => a + b;
-const sub = (a, b) => a - b;
-const mult = (a, b) => a * b;
-
-const beforeCalls = (a, fs, calc) => go(
-  calls(fs, a),
-  reduce(calc));
-
-beforeCalls(
-  0,
-  [a => a + 10, a => a + 20], // 0 + 10, 0 + 20
-  add);
-  // 30
-
-beforeCalls(
-  5,
-  [a => a + 10, a => a + 20], // 5 + 10, 5 + 20
-  add);
-  // 40
-
-// 화살표 함수를 이용하여 sub, mult를 부분 적용하고,
-// fs와, a를 전달 받는 순서를 바꾸고,
-// (...fs) 한 번, a 한 번 나누어 적용되도록 만들어진 함수를 리턴
-const subF = (...fs) => a => beforeCalls(a, fs, sub);
-const multF = (...fs) => a => beforeCalls(a, fs, mult);
-
+<script>
 const p1 = {
   id: 1,
   selected: true,
@@ -143,7 +119,43 @@ const [price, discount, quantity, selected] =
 console.log( price(p1) ); // 12000
 console.log( discount(p1) ); // 2000
 console.log( quantity(p1) ); // 3
+</script>
 
+위 `price`는 `const price = p => p.price`와 같습니다.
+
+<script>
+const add = (a, b) => a + b;
+const sub = (a, b) => a - b;
+const mult = (a, b) => a * b;
+
+const baseCalcF = calc => (...fs) => a => go(
+  map(f => f(a), fs),
+  reduce(calc));
+
+                // 5 + 10, 5 + 20
+baseCalcF(add)(a => a + 10, a => a + 20)(5);
+// 40
+</script>
+
+`baseCalcF`는 세 번째 실행에서 받은 인자인 5를, 두 번째 실행에서 받은 함수들을 적용한 배열로 만든 후, 해당 배열을 첫 번째 실행에서 받은 `add` 함수로 축약합니다.
+
+<script>
+const subF = baseCalcF(sub);
+const multF = baseCalcF(mult);
+
+subF(a => a + 10, a => a + 20)(0);
+// -10
+multF(a => a + 10, a => a + 20)(0);
+// 200
+multF(a => a + 10, a => a + 20)(10);
+// 600
+</script>
+
+`baseCalcF`에서 축약에 사용할 함수를 전달하여 위와 같이 사용할 수 있습니다.
+
+아래는 상품 하나를 다루는 함수들입니다.
+
+<script>
 // 네임 스페이스 - 상품에 대한 함수들
 const pdt = {};
 
@@ -158,7 +170,13 @@ console.log( pdt.totalPrice(p1) ); // 36000
 // 할인된 금액 x 수량
 pdt.discountedTotalPrice = multF(pdt.discountedPrice, quantity);
 console.log( pdt.discountedTotalPrice(p1) ); // 30000
+</script>
 
+`pdt` 네임 스페이스에 필요한 함수들을 `subF`와 `multF`를 이용해 만들었습니다. `subF(price, discount)`의 결과인 `pdt.discountedPrice` 함수는 `p1`로부터 `p1.price`과 `p1.discount`를 추출한 배열을 만든 후 `sub`로 축약하며, `multF`도 동일하게 동작합니다. `pdt.discountedTotalPrice`는 동일 로직을 중첩하여 조합하였습니다.
+
+아래는 상품 목록을 다루는 함수들입니다.
+
+<script>
 const products = [
   { id: 1, selected: true, name: 'A 반팔티', price: 12000, discount: 2000, quantity: 3 },
   { id: 2, selected: false, name: 'B 후드티', price: 30000, discount: 0, quantity: 3 },
@@ -195,8 +213,13 @@ console.log( pdts.price(products) ); // 264000
 
 // 모든 상품 할인된 금액 x 수량
 console.log( pdts.discountedPrice(products) ); // 24000
+</script>
 
+위에서는 `pdts.total`를 만든 후 해당 함수에 원하는 함수를 조합하면서, 모든 상품에 해당하는 각각의 값들을 계산하는 함수들을 함수 조합을 통해 만들었습니다.
 
+아래는 `pdts.total`에 `before`를 전달하거나, `pipe`를 이용하여 선택된 상품들에 해당하는 각각의 값들을 계산하는 함수들을 만들었습니다.
+
+<script>
 // 세 번째 인자에 `filter(selected)`를 전달하여 선택된 상품의 수량만 합산
 console.log( pdts.total(quantity, products, filter(selected)) ); // 7
 
@@ -225,7 +248,13 @@ pdts.selected.dq = _ => pdts.total(
   filter(discount));   // <-- ...before에 넘어감
 
 console.log( pdts.selected.dq(products) ); // 5
+</script>
 
+일반적으로는 `...before`보다는 `pipe`를 이용하지만 `...before`와 같은 기법을 이용하면 원하는 특정 위치에 함수들을 추가할 수 있는 함수를 준비할 수 있습니다.
+
+아래는 좀 더 복잡한 문제들을 위에 있던 함수들의 조합을 통해 해결한 사례입니다.
+
+<script>
 // 선택된 모든 상품 중 할인 금액이 있는 상품의 총 수량 - pipe 이용
 pdts.selected.dq = pipe(
   filter(selected),
@@ -248,8 +277,6 @@ go(products,
   pdts.price,
   console.log); // 40000
 </script>
-
-일반적으로는 `...before`보다는 `pipe`를 이용하지만 `...before`와 같은 기법을 이용하면 원하는 특정 위치에 함수들을 추가할 수 있는 함수를 준비할 수 있습니다.
 
 ## 정리
 
