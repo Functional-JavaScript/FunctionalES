@@ -25,7 +25,7 @@
   });
 
   const hasIter = a => !!(a && a[Symbol.iterator]),
-    isObject = a => !!(a && typeof a == 'object');
+    isObject = a => !!a && (typeof a == 'object' || typeof a == 'function');
 
   const valuesIter = coll =>
     hasIter(coll) ?
@@ -100,6 +100,7 @@
   const compact = filter(identity);
 
   const negate = f => pipe(f, not);
+  const not = a => !a;
 
   const go = (..._) => reduce(callRight, _);
 
@@ -118,6 +119,7 @@
 
   const findVal = curry2((f, coll) => {
     const iter = valuesIter(coll);
+    f = isMatch(f);
     return function recur(res) {
       for (const val of iter)
         if ((res = f(val)) !== undefined)
@@ -126,7 +128,7 @@
   });
 
   const find = curry2((f, coll) =>
-    findVal(a => go(a, f, b => b ? a : undefined), coll));
+    findVal(a => go(a, isMatch(f), b => b ? a : undefined), coll));
 
   const isAny = a => a !== undefined;
   const some = curry2(pipe(find, isAny));
@@ -134,13 +136,11 @@
   const isUndefined = a => a === undefined;
   const none = curry2(pipe(find, isUndefined));
 
-  const not = a => !a;
   const every = curry2((f, coll) => {
-    var nf = negate(f), hasLength = false;
+    var nf = negate(isMatch(f)), hasLength = false;
     return go(coll,
       find(v => (hasLength = true, nf(v))),
-      isUndefined,
-      bool => hasLength && bool);
+      v => hasLength && v === undefined);
   });
 
   const isMatch = curry2((a, b) =>
@@ -259,6 +259,7 @@
 
   const findValC = curry2((f, coll, limit = Infinity) => {
     const iter = stepIter(coll, limit);
+    f = isMatch(f);
     return new Promise(function(resolve, reject) {
       !function recur() {
         var t = 0, r = 0;
@@ -273,11 +274,15 @@
   });
 
   const findC = curry2((f, coll, limit) =>
-    findValC(a => go(a, f, b => b ? a : undefined), coll, limit));
+    findValC(a => go(a, isMatch(f), b => b ? a : undefined), coll, limit));
   const someC = curry2(pipe(findC, isAny));
   const noneC = curry2(pipe(findC, isUndefined));
-  const everyC = curry2((f, coll, limit) =>
-    !isEmpty(coll) && go(findC(negate(f), coll, limit), isUndefined));
+  const everyC = curry2((f, coll) => {
+    var nf = negate(isMatch(f)), hasLength = false;
+    return go(coll,
+      findC(v => (hasLength = true, nf(v))),
+      v => hasLength && v === undefined);
+  });
 
   function hurdle(...fs) {
     var errorF, nullableF, completeF, exceptions = [];

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>부록. 깊은 값 조회</title>
+  <script src="functional.es.js"></script>
+  <script>
+    const { go, find, isObject, reduce, curry2 } = Functional;
+  </script>
+</head>
+<body>
+
+# 부록. 깊은 값 조회
+
+### 목차
+ -
+
+##
+
+<script>
+const get = curry2((key, obj) => {
+  return obj ? isObject(key) ? find(key, obj) : obj[key] : undefined;
+});
+
+const flip = f => (..._) => f(..._.reverse());
+
+const baseSel = sep => curry2((selector, start) =>
+  Array.isArray(selector) ?
+    reduce(flip(baseSel(sep)), start, selector)
+  :
+  typeof selector != 'string' ?
+    find(selector, start)
+  :
+  reduce((acc, key, tk = key.trim(), s = tk[0]) =>
+    get(s == '#' ? { id: tk.substr(1) } : s == '[' || s == '{' ? JSON.parse(tk) : tk, acc),
+    start,
+    selector.split(sep))
+);
+const sel = baseSel(' > ');
+
+const datas = {
+  products: [
+    { id: 1, selected: true, name: 'A 반팔티', price: 12000, discount: 2000, quantity: 3 },
+    { id: 2, selected: false, name: 'B 후드티', price: 30000, discount: 0, quantity: 3 },
+    { id: 3, selected: true, name: 'C 폰케이스', price: 20000, discount: 0, quantity: 2 },
+    { id: 4, selected: false, name: 'D 반팔티', price: 12000, discount: 2000, quantity: 4 },
+    { id: 5, selected: true, name: 'E 쿠션', price: 25000, discount: 5000, quantity: 2 }
+  ]
+};
+
+go(datas,
+  sel('products > 0 > name'),
+  a => console.log(1, a));
+  // 1 "A 반팔티"
+
+go(datas,
+  sel('products > 3 > name'),
+  a => console.log(2, a));
+  // 2 "D 반팔티"
+
+go(datas,
+  sel('products > #3 > name'),
+  a => console.log(3, a));
+  // 3 "C 폰케이스"
+
+go(datas,
+  sel('products > { "id": 3 } > name'),
+  a => console.log(4, a));
+  // 3 "C 폰케이스"
+
+go(datas,
+  sel('products > { "id": 3, "selected": false } > name'),
+  a => console.log(5, a));
+  // 5 undefined
+
+go(datas,
+  sel('products > { "selected": false } > name'),
+  a => console.log(6, a));
+  // 6 B 후드티
+
+go(datas,
+  sel('products > { "selected": false, "quantity": 3 } > name'),
+  a => console.log(7, a));
+  // 7 B 후드티
+
+go(datas,
+  sel('products > { "quantity": 2 } > name'),
+  a => console.log(8, a));
+  // 8 "C 폰케이스"
+
+go(datas,
+  sel(['products', p => p.quantity == 2, 'name']),
+  a => console.log(9, a));
+  // 9 "C 폰케이스"
+
+go(datas,
+  sel(['products', { quantity: 2 }, 'name']),
+  a => console.log(10, a));
+  // 10 "C 폰케이스"
+</script>
+
+</body>
+</html>
