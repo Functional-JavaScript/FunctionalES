@@ -5,7 +5,7 @@
   <title>부록. 깊은 값 조회</title>
   <script src="functional.es.js"></script>
   <script>
-    const { go, find, isObject, reduce, curry2 } = Functional;
+    const { go, find, isMatch, isObject, reduce, curry2 } = Functional;
   </script>
 </head>
 <body>
@@ -36,7 +36,6 @@ const baseSel = sep => curry2((selector, start) =>
     start,
     selector.split(sep))
 );
-const sel = baseSel(' > ');
 
 const datas = {
   products: [
@@ -47,6 +46,8 @@ const datas = {
     { id: 5, selected: true, name: 'E 쿠션', price: 25000, discount: 5000, quantity: 2 }
   ]
 };
+
+const sel = baseSel(' > ');
 
 go(datas,
   sel('products > 0 > name'),
