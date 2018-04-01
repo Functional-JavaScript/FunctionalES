@@ -24,8 +24,8 @@
     })
   });
 
-  const hasIter = a => a && a[Symbol.iterator],
-    isObject = a => a && typeof a == 'object';
+  const hasIter = a => !!(a && a[Symbol.iterator]),
+    isObject = a => !!(a && typeof a == 'object');
 
   const valuesIter = coll =>
     hasIter(coll) ?
@@ -104,7 +104,7 @@
   const go = (..._) => reduce(callRight, _);
 
   const pipe = (..._fs) => Object.assign(
-    (..._) => reduce(callRight, tuple(..._), _fs), { _fs }, hurdles);
+    (..._) => reduce(callRight, toTuple(_), _fs), { _fs }, hurdles);
 
   const hurdles = map(
     name => function(...fs2) { return hurdle(...this._fs)[name](...fs2) }, {
@@ -135,14 +135,30 @@
   const none = curry2(pipe(find, isUndefined));
 
   const not = a => !a;
-  const every = curry2((f, coll) => go(coll, find(negate(f)), isUndefined));
+  const every = curry2((f, coll) => {
+    var nf = negate(f), hasLength = false;
+    return go(coll,
+      find(v => (hasLength = true, nf(v))),
+      isUndefined,
+      bool => hasLength && bool);
+  });
+
+  const isMatch = curry2((a, b) =>
+    typeof a == 'function' ? a(b)
+    :
+    Array.isArray(b) ? every(v => b.includes(v), a)
+    :
+    typeof b == 'object' ? every(([k, v]) => b[k] == v, ObjIter.entries(a))
+    :
+    a == b
+  );
 
   function match(...targets) {
     var cbs = [];
 
     function _case(f) {
       cbs.push({
-        _case: typeof f == 'function' ? pipe(...arguments) : b => b == f
+        _case: typeof f == 'function' ? pipe(...arguments) : isMatch(f)
       });
       return body;
     }
@@ -260,7 +276,8 @@
     findValC(a => go(a, f, b => b ? a : undefined), coll, limit));
   const someC = curry2(pipe(findC, isAny));
   const noneC = curry2(pipe(findC, isUndefined));
-  const everyC = curry2((f, coll, limit) => go(findC(negate(f), coll, limit), isUndefined));
+  const everyC = curry2((f, coll, limit) =>
+    !isEmpty(coll) && go(findC(negate(f), coll, limit), isUndefined));
 
   function hurdle(...fs) {
     var errorF, nullableF, completeF, exceptions = [];
@@ -334,7 +351,7 @@
     go, pipe,
     findVal, find, some, none, every,
     findValC, findC, someC, noneC, everyC,
-    match, or, and,
+    match, or, and, isMatch,
     Tuple, tuple, toTuple, callRight,
     negate, not, isAny, isUndefined,
     each, log
