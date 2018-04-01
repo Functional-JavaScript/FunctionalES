@@ -119,7 +119,6 @@
 
   const findVal = curry2((f, coll) => {
     const iter = valuesIter(coll);
-    f = isMatch(f);
     return function recur(res) {
       for (const val of iter)
         if ((res = f(val)) !== undefined)
@@ -128,7 +127,7 @@
   });
 
   const find = curry2((f, coll) =>
-    findVal(a => go(a, isMatch(f), b => b ? a : undefined), coll));
+    findVal(a => go(a, f, b => b ? a : undefined), coll));
 
   const isAny = a => a !== undefined;
   const some = curry2(pipe(find, isAny));
@@ -137,7 +136,7 @@
   const none = curry2(pipe(find, isUndefined));
 
   const every = curry2((f, coll) => {
-    var nf = negate(isMatch(f)), hasLength = false;
+    var nf = negate(f), hasLength = false;
     return go(coll,
       find(v => (hasLength = true, nf(v))),
       v => hasLength && v === undefined);
@@ -259,7 +258,6 @@
 
   const findValC = curry2((f, coll, limit = Infinity) => {
     const iter = stepIter(coll, limit);
-    f = isMatch(f);
     return new Promise(function(resolve, reject) {
       !function recur() {
         var t = 0, r = 0;
@@ -274,11 +272,11 @@
   });
 
   const findC = curry2((f, coll, limit) =>
-    findValC(a => go(a, isMatch(f), b => b ? a : undefined), coll, limit));
+    findValC(a => go(a, f, b => b ? a : undefined), coll, limit));
   const someC = curry2(pipe(findC, isAny));
   const noneC = curry2(pipe(findC, isUndefined));
   const everyC = curry2((f, coll) => {
-    var nf = negate(isMatch(f)), hasLength = false;
+    var nf = negate(f), hasLength = false;
     return go(coll,
       findC(v => (hasLength = true, nf(v))),
       v => hasLength && v === undefined);

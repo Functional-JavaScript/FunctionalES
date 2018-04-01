@@ -19,7 +19,7 @@
 
 <script>
 const get = curry2((key, obj) => {
-  return obj ? isObject(key) ? find(key, obj) : obj[key] : undefined;
+  return obj ? isObject(key) ? find(isMatch(key), obj) : obj[key] : undefined;
 });
 
 const flip = f => (..._) => f(..._.reverse());
@@ -28,8 +28,8 @@ const baseSel = sep => curry2((selector, start) =>
   Array.isArray(selector) ?
     reduce(flip(baseSel(sep)), start, selector)
   :
-  typeof selector != 'string' ?
-    find(selector, start)
+  isObject(selector) ?
+    find(isMatch(selector), start)
   :
   reduce((acc, key, tk = key.trim(), s = tk[0]) =>
     get(s == '#' ? { id: tk.substr(1) } : s == '[' || s == '{' ? JSON.parse(tk) : tk, acc),
