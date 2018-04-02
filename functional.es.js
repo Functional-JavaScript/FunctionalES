@@ -379,7 +379,7 @@
     baseSel,
     match, or, and, isMatch,
     Tuple, tuple, toTuple, callRight,
-    negate, not, isAny, isUndefined,
-    each, log
+    negate, complement: negate, not, isAny, isUndefined,
+    each, log,
   };
 } ();
