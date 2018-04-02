@@ -1,6 +1,8 @@
 !function() {
   const curry2 = f => (..._) => _.length < 2 ? (..._2) => f(..._, ..._2) : f(..._);
 
+  const flip = f => (..._) => f(..._.reverse());
+
   const then = curry2((f, a) => a instanceof Promise ? a.then(f) : f(a));
 
   const log = console.log;
@@ -152,6 +154,8 @@
     a == b
   );
 
+  const findWhere = curry2((w, coll) => find(isMatch(w), coll));
+
   function match(...targets) {
     var cbs = [];
 
@@ -281,6 +285,7 @@
       findC(v => (hasLength = true, nf(v))),
       v => hasLength && v === undefined);
   });
+  const findWhereC = curry2((w, coll) => findC(isMatch(w), coll));
 
   function hurdle(...fs) {
     var errorF, nullableF, completeF, exceptions = [];
@@ -343,17 +348,35 @@
     return evaluator;
   }
 
+  const baseSel = sep => curry2((selector, acc) =>
+    Array.isArray(selector) ?
+      reduce(flip(baseSel(sep)), acc, selector)
+    :
+    isObject(selector) ?
+      findWhere(selector, acc)
+    :
+    reduce(
+      (acc, key, tk = key.trim(), s = tk[0]) =>
+        !acc ? acc :
+        s == '#' ? findWhere({ id: tk.substr(1) }, acc) :
+        s == '[' || s == '{' ? findWhere(JSON.parse(tk), acc) :
+        acc[tk],
+      acc,
+      selector.split(sep))
+  );
+
   const root = typeof global == 'object' ? global : window;
   root.Functional = {
-    curry2,
+    curry2, flip,
     then, identity, noop,
     ObjIter, valuesIter, stepIter, hasIter, isObject,
     map, mapC, series, concurrency,
     filter, reject, compact,
     reduce,
     go, pipe,
-    findVal, find, some, none, every,
-    findValC, findC, someC, noneC, everyC,
+    findVal, find, some, none, every, findWhere,
+    findValC, findC, someC, noneC, everyC, findWhereC,
+    baseSel,
     match, or, and, isMatch,
     Tuple, tuple, toTuple, callRight,
     negate, not, isAny, isUndefined,

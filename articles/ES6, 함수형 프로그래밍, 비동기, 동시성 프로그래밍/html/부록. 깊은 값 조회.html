@@ -5,7 +5,7 @@
   <title>부록. 깊은 값 조회</title>
   <script src="functional.es.js"></script>
   <script>
-    const { go, find, isMatch, isObject, reduce, curry2 } = Functional;
+    const { go, baseSel } = Functional;
   </script>
 </head>
 <body>
@@ -13,30 +13,33 @@
 # 부록. 깊은 값 조회
 
 ### 목차
- -
+ - 복잡한 값을 조회할 때 중간에 nullable을 만나도 에러 피하기
 
-##
+## 복잡한 값을 조회할 때 중간에 nullable을 만나도 에러 피하기
 
 <script>
-const get = curry2((key, obj) => {
-  return obj ? isObject(key) ? find(isMatch(key), obj) : obj[key] : undefined;
-});
+var obj = { a: { b: { c: [10, 20, 30] } } };
 
-const flip = f => (..._) => f(..._.reverse());
+const sel = baseSel(' > ');
 
-const baseSel = sep => curry2((selector, start) =>
-  Array.isArray(selector) ?
-    reduce(flip(baseSel(sep)), start, selector)
-  :
-  isObject(selector) ?
-    find(isMatch(selector), start)
-  :
-  reduce((acc, key, tk = key.trim(), s = tk[0]) =>
-    get(s == '#' ? { id: tk.substr(1) } : s == '[' || s == '{' ? JSON.parse(tk) : tk, acc),
-    start,
-    selector.split(sep))
-);
+console.log( sel('a > b > c > 0', obj) );
+// 10
+console.log( sel('a > b > c > 2', obj) );
+// 30
+console.log( sel('a > b > c > d > e', obj) );
+// undefined
 
+const sel2 = baseSel('.'); // seperator 변경 가능
+
+console.log( sel2('a.b.c.0', obj) );
+// 10
+console.log( sel2('a.b.c.2', obj) );
+// 30
+console.log( sel2('a.b.c.d.e', obj) );
+// undefined
+</script>
+
+<script>
 const datas = {
   products: [
     { id: 1, selected: true, name: 'A 반팔티', price: 12000, discount: 2000, quantity: 3 },
@@ -46,8 +49,6 @@ const datas = {
     { id: 5, selected: true, name: 'E 쿠션', price: 25000, discount: 5000, quantity: 2 }
   ]
 };
-
-const sel = baseSel(' > ');
 
 go(datas,
   sel('products > 0 > name'),
@@ -60,14 +61,14 @@ go(datas,
   // 2 "D 반팔티"
 
 go(datas,
-  sel('products > #3 > name'),
+  sel('products > { "id": 3 } > name'),
   a => console.log(3, a));
   // 3 "C 폰케이스"
 
 go(datas,
-  sel('products > { "id": 3 } > name'),
+  sel('products > #3 > name'), // { "id": 3 } 과 동일
   a => console.log(4, a));
-  // 3 "C 폰케이스"
+  // 4 "C 폰케이스"
 
 go(datas,
   sel('products > { "id": 3, "selected": false } > name'),
