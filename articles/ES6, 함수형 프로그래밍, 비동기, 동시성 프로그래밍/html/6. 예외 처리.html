@@ -84,6 +84,7 @@ console.log(f2(1)); // 이런!
 
 <script>
 const log = then(console.log);
+
 const f3 = pipe(
   a => a + 10,
   a => Promise.resolve(null),
@@ -224,8 +225,9 @@ pipe(
 ).error(
   _ => console.log('에러!')
 ).complete(
-  a => console.log('성공 - ', a)
+  a => console.log('성공 -', a)
 ) ();
+// 성공 - 10
 </script>
 
 ## 다른 컬렉션 조작 함수들과의 조합
@@ -281,7 +283,7 @@ f12([5, 10, 15]);
 
 ## 동기/비동기를 함께 지원하는 함수의 필요성
 
-아래는 [function.es]의 `map, some`으로 변경한 코드입니다.
+아래는 Functional.es의 `map, some`으로 변경한 코드입니다.
 
 <script>
 const { map, some } = Functional;
