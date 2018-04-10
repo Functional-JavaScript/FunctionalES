@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>부록. API</title>
+  <script src="functional.es.js"></script>
+  <script>
+    const {
+      curry2, flip,
+      then, identity, noop,
+      ObjIter, valuesIter, stepIter, hasIter, isObject,
+      map, mapC, mapS, series, concurrency,
+      filter, reject, compact,
+      reduce,
+      go, pipe, tap, hi,
+      findVal, find, some, none, every, findWhere,
+      findValC, findC, someC, noneC, everyC, findWhereC,
+      baseSel, sel,
+      match, or, and, isMatch,
+      Tuple, tuple, toTuple, callRight,
+      negate, complement, not, isAny, isUndefined,
+      each, log
+    } = Functional;
+  </script>
+</head>
+<body>
+
+# 부록. API
+
+### curry2
+
+<script type="module">
+const add = curry2((a, b) => a + b);
+log( add(10, 5) ); // 15
+log( add(10)(5) ); // 15
+</script>
+
+### flip
+
+<script type="module">
+const add = flip((a, b) => a + b);
+log( add('A', 'B') ); // 'BA'
+</script>
+
+### then :: Promise p => (a -> b | p b) -> a | p a -> b | p b
+
+<script type="module">
+const log = then(console.log);
+
+log(1);
+// 1
+log(Promise.resolve(1));
+// 1
+
+const add = curry2((a, b) => a + b);
+const add10 = then(add(10));
+
+log(add10(new Promise(resolve => setTimeout(_ => resolve(20), 1000))));
+// 1초뒤 30
+</script>
+
+### identity, noop
+
+<script type="module">
+log( identity(5) ); // 5
+log( identity(2) ); // 2
+log( noop() ); // undefined
+log( noop() ); // undefined
+</script>
+
+### go, pipe
+
+<script type="module">
+var f1 = pipe(
+  _ => 1,
+  a => a + 10,
+  a => a + 100,
+  a => a + 1000,
+  console.log);
+
+f1();
+//1111
+
+go(2,
+  a => a + 20,
+  a => a + 200,
+  a => a + 2000,
+  console.log);
+  // 2222
+</script>
+
+### map
+
+<script type="module">
+log( map(a => a + 1, [1, 2]) );
+// [2, 3]
+
+log( map(a => a + 1)([1, 2]) );
+// [2, 3]
+
+go([1, 2],
+  map(a => a + 1),
+  log);
+  // [2, 3]
+
+log( map(a => a + 1, {a: 1, b: 2}) );
+// {a: 2, b: 3}
+
+log( map(a => a + 1, new Map([['a', 1], ['b', 2]])) );
+// Map(2) {"a" => 2, "b" => 3}
+
+log( map(a => a + 1, Promise.resolve(1)) );
+// Promise {<resolved>: 2}
+
+const f = map(a => a + 1, _=> 1);
+log(f());
+// 2
+
+// String
+log(
+  map(a => a + 1, "12")
+);
+// ["11", "21"]
+
+// NodeList
+log(
+  map(el => el.nodeName, document.querySelectorAll('head *'))
+);
+// ['META', 'TITLE', 'SCRIPT']
+
+// Iterator 1
+log(
+  map(a => a + 1, function *() {
+    yield 1;
+    yield 2;
+  } ())
+);
+// [2, 3]
+
+// Iterator 2
+log(
+  map(([key, val]) => [key.toUpperCase(), val + 1], new Map([['a', 1], ['b', 2]]).entries())
+);
+// [["A", 2], ["B", 3]]
+</script>
+
+### mapC
+
+`mapC`는 비동기 상황 모두를 동시에 출발 시킨 후 결과를 완성해갑니다.
+
+<script type="module">
+const add10 = a => new Promise(resolve => setTimeout(_ => resolve(a + 10), 1000));
+
+go([1, 2, 3],
+  map(add10),
+  log); // 3초 뒤 [11, 12, 13]
+
+go([4, 5, 6],
+  mapC(add10),
+  log); // 1초 뒤 [14, 15, 16]
+</script>
+
+### mapS as mapStr
+
+
+
+
+
+</body>
+</html>

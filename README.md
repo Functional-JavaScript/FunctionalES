@@ -1,4 +1,4 @@
-# Functional.es
+# FunctionalES
 
 ## ES6+, 함수형 프로그래밍, 비동기, 동시성 프로그래밍
 

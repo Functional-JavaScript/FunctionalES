@@ -92,6 +92,8 @@
     _map(f, coll)
   );
 
+  const mapS = curry2((f, coll) => reduce((a, b) => `${a}${f(b)}`, '', coll));
+
   const filter = curry2(mfReduce(
     f => (m, [k, v]) => go(f(v), b => b ? m.set(k, v) : m),
     f => (arr, v) => go(f(v), b => (b && arr.push(v), arr)),
@@ -101,7 +103,8 @@
 
   const compact = filter(identity);
 
-  const negate = f => pipe(f, not);
+  const negate = f => pipe(f, not), complement = negate;
+
   const not = a => !a;
 
   const go = (..._) => reduce(callRight, _);
@@ -116,6 +119,13 @@
       exception: 'exception',
       complete: 'complete',
     });
+
+  const tap = (...fs) => {
+    const f = pipe(...fs);
+    return (...args) => go(f(...args), _ => toTuple(args));
+  };
+
+  const hi = tap(console.log);
 
   const each = curry2((f, coll) => reduce((_, val) => f(val), null, coll));
 
@@ -158,7 +168,6 @@
 
   function match(...targets) {
     var cbs = [];
-
     function _case(f) {
       cbs.push({
         _case: typeof f == 'function' ? pipe(...arguments) : isMatch(f)
@@ -365,21 +374,23 @@
       selector.split(sep))
   );
 
+  const sel = baseSel(' > ');
+
   const root = typeof global == 'object' ? global : window;
   root.Functional = {
     curry2, flip,
     then, identity, noop,
     ObjIter, valuesIter, stepIter, hasIter, isObject,
-    map, mapC, series, concurrency,
+    map, mapC, mapS, series, concurrency,
     filter, reject, compact,
     reduce,
-    go, pipe,
+    go, pipe, tap, hi,
     findVal, find, some, none, every, findWhere,
     findValC, findC, someC, noneC, everyC, findWhereC,
-    baseSel,
+    baseSel, sel,
     match, or, and, isMatch,
     Tuple, tuple, toTuple, callRight,
-    negate, complement: negate, not, isAny, isUndefined,
+    negate, complement, not, isAny, isUndefined,
     each, log,
   };
 } ();

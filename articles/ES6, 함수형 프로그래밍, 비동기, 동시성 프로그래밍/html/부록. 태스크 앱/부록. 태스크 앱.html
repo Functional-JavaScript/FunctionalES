@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>부록. 태스크 앱</title>
+  <script src="functional.es.js"></script>
+  <script>
+    const {
+      curry2, flip,
+      then, identity, noop,
+      ObjIter, valuesIter, stepIter, hasIter, isObject,
+      map, mapC, mapS, series, concurrency,
+      filter, reject, compact,
+      reduce,
+      go, pipe, tap, hi,
+      findVal, find, some, none, every, findWhere,
+      findValC, findC, someC, noneC, everyC, findWhereC,
+      baseSel, sel,
+      match, or, and, isMatch,
+      Tuple, tuple, toTuple, callRight,
+      negate, complement, not, isAny, isUndefined,
+      each, log
+    } = Functional;
+  </script>
+  <script src="anime.min.js"></script>
+  <script src="$.js"></script>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+
+<div id="task">
+
+  <div class="page list">
+    <div class="container">
+      <button type="button" class="create">생성</button>
+      <button type="button" class="user_picker">유저피커</button>
+      <div class="body">
+        <ul class="task_list"></ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="Store.js"></script>
+<script src="Task.js"></script>
+<script src="Task.editor.js"></script>
+<script src="Task.list.js"></script>
+
+<script>
+  // X api > 창을 만들어서 내부에 내용을 그리고 올린다.
+  // X 창을 만들어서 올리고 > api > 내용을 그린다.
+  // O [api, 창을 만들어서 올린다.] > 내용을 그린다.
+
+  const User = {};
+  User.picker = {};
+  User.item = {};
+  User.item.tmpl = mapS(u => `<li class="user" _id="${u.id}">${u.name}</li>`);
+
+  User.picker.el = pipe(
+    _ =>`
+      <div class="page user_picker">
+        <div class="container">
+          <div class="header">
+            <h1>담당자 고르기</h1>
+            <div class="options">
+              <button type="button" class="cancel left">취소</button>
+            </div>
+          </div>
+          <div class="body">
+            <ul class="user_list"></ul>
+          </div>
+        </div>
+      </div>
+    `,
+    $.el,
+    $.append($('#task')),
+    $.animate({ top: 0, opacity: 1 }),
+    $.on('click', '.options .cancel', e => $.remove(e.delegateTarget))
+  );
+
+  User.picker.show = pipe(
+    _ => concurrency([
+      pipe(User.picker.el, $.find('.user_list')),
+      pipe(Store.getUsers, User.item.tmpl),
+    ]),
+    ([userListEl, html]) => userListEl.innerHTML = html
+  );
+
+  go(
+    $('#task .page.list'),
+    Task.list.init,
+    $.on('click', '.user_picker', User.picker.show)
+  );
+</script>
+
+</body>
+</html>
