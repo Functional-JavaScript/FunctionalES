@@ -98,13 +98,15 @@ console.log( f2(10) );
 // '1도 2도 아니군요.'
 </script>
 
-`case`는 내부적으로 `isMatch`처럼 동작합니다.
+`case`는 내부적으로 `isMatch`처럼 동작합니다. `isMatch`는 두 번째 인자 값이 대상이며, 첫 번째 인자 값이 조건입니다. 객체라면 동일한 값이 내부에 있는지를 검사하고, 원시 값의 경우는 `==` 으로 비교합니다. 조건이 함수라면 함수를 실행하여 결과를 확인합니다.
 
 <script>
 const { isMatch } = Functional;
 
 console.log( isMatch({ a: 1 }, { a: 1, b: 2 }) ); // true
+console.log( isMatch({ a: 1, b: 2 }, { a: 1 }) ); // false
 console.log( isMatch([2], [1, 2, 3]) ); // true
+console.log( isMatch([1, 2, 3], [2]) ); // false
 console.log( isMatch(5, 5) ); // true
 console.log( isMatch("a", "a") ); // true
 
@@ -115,13 +117,32 @@ console.log( isMatch("a", "aaa") ); // false
 console.log( isMatch(b => b.includes("a"), "aaa") ); // true
 
 match ({ a: 1, b: 2 })
-  .case({ a: 2 }) (_=> console.log('여기 아니고 1'))
-  .case({ b: 3 }) (_=> console.log('여기 아니고 2'))
-  .case([2])      (_=> console.log('여기 아니고 3'))
-  .case(2)        (_=> console.log('여기 아니고 4'))
-  .case({ b: 2 }) (_=> console.log('여기'))
-  .else           (_=> console.log('여기 아니고 5'));
-  // 여기
+  .case({ a: 2 }) (_=> console.log('---- 1'))
+  .case({ b: 3 }) (_=> console.log('---- 2'))
+  .case([4])      (_=> console.log('---- 3'))
+  .case(4)        (_=> console.log('---- 4'))
+  .case({ b: 2 }) (_=> console.log('---- 5'))
+  .else           (_=> console.log('---- 6'));
+  // ---- 5
+</script>
+
+`match.case`를 바로 실행하여 함수 리턴형으로 사용할 수 있습니다.
+
+<script>
+const mf = match
+  .case({ a: 2 }) (_=> console.log('---- 1'))
+  .case({ b: 3 }) (_=> console.log('---- 2'))
+  .case([4])      (_=> console.log('---- 3'))
+  .case(5)        (_=> console.log('---- 4'))
+  .case({ b: 2 }) (_=> console.log('---- 5'))
+  .else           (_=> console.log('---- 6'));
+
+mf({ a: 2 });        // ---- 1
+mf({ b: 3 });        // ---- 2
+mf([4]);             // ---- 3
+mf(5);               // ---- 4
+mf({ b: 2, c: 10 }); // ---- 5
+mf(10);              // ---- 6
 </script>
 
 ## 함수를 값으로 다루면서 원하는 시점에 평가하기

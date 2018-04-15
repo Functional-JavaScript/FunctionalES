@@ -157,7 +157,7 @@
   const isMatch = curry2((a, b) =>
     typeof a == 'function' ? a(b)
     :
-    Array.isArray(b) ? every(v => b.includes(v), a)
+    Array.isArray(b) && Array.isArray(a) ? every(v => b.includes(v), a)
     :
     typeof b == 'object' ? every(([k, v]) => b[k] == v, ObjIter.entries(a))
     :
@@ -166,30 +166,36 @@
 
   const findWhere = curry2((w, coll) => find(isMatch(w), coll));
 
-  function match(...targets) {
+  function baseMatch(targets) {
     var cbs = [];
+
+    function _evl() {
+      return go(cbs,
+        find(pb => { return pb._case(...targets); }),
+        pb => pb._body(...targets))
+    }
+
     function _case(f) {
-      cbs.push({
-        _case: typeof f == 'function' ? pipe(...arguments) : isMatch(f)
-      });
-      return body;
+      cbs.push({ _case: typeof f == 'function' ? pipe(...arguments) : isMatch(f) });
+      return _body;
     }
     _case.case = _case;
 
-    function body() {
+    function _body() {
       cbs[cbs.length-1]._body = pipe(...arguments);
       return _case;
     }
 
     _case.else = function() {
       _case(_=> true) (...arguments);
-      return go(cbs,
-        find(pb => { return pb._case(...targets); }),
-        pb => pb._body(...targets));
+      return targets ? _evl() : (...targets2) => ((targets = targets2), _evl());
     };
 
     return _case;
   }
+
+  const match = (..._) => baseMatch(_);
+  match.case = (..._) => baseMatch(null).case(..._);
 
   const or = (...fs) => {
     const last = fs.pop();
