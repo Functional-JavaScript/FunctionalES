@@ -79,8 +79,9 @@
 - [부록. 템플릿 리터럴]
     - 예정
 
-- [부록. 깊은 값 조회]
-    - 예정
+- [부록. 깊은 값 조회](https://github.com/Functional-JavaScript/FunctionalES/blob/master/articles/ES6%2C%20%ED%95%A8%EC%88%98%ED%98%95%20%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D%2C%20%EB%B9%84%EB%8F%99%EA%B8%B0%2C%20%EB%8F%99%EC%8B%9C%EC%84%B1%20%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%98%EB%B0%8D/%EB%B6%80%EB%A1%9D.%20%EA%B9%8A%EC%9D%80%20%EA%B0%92%20%EC%A1%B0%ED%9A%8C.md)
+    - 복잡한 값을 조회할 때 중간에 nullable을 만나도 에러 피하기
+    - key를 알 수 없을 때, {} # function object로 조회하기
 
 - [...]
     - 예정

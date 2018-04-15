@@ -14,7 +14,7 @@
 
 ### 목차
  - 복잡한 값을 조회할 때 중간에 nullable을 만나도 에러 피하기
- - key가 아닌 함수 혹은 match에 사용되는 문법으로 조회하기
+ - key를 알 수 없을 때, {} # function object로 조회하기
 
 ## 복잡한 값을 조회할 때 중간에 nullable을 만나도 에러 피하기
 
@@ -57,7 +57,7 @@ console.log( sel2('a > b > c > d > e', obj) );
 // undefined
 </script>
 
-## key를 알 수 없을 때, {} # function object 등으로 조회 하기
+## key를 알 수 없을 때, {} # function object로 조회하기
 
 이와 같이 깊은 값을 조회하는 문자열 혹은 값을 JSON Selector라고 부르겠습니다. JSON Selector의 몇 가지 문법을 이용하면, 더 유연하게 원하는 깊은 값을 조회할 수 있습니다.
 
