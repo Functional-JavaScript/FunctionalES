@@ -1,4 +1,4 @@
-# 부록. API
+# API
 
 ### curry2
 
