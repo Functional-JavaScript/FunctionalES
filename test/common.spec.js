@@ -15,6 +15,15 @@ describe('[ curry2 ]', function () {
     expect(addWith5(3)).to.eql(8)
     expect(addWith5(5)).to.eql(10)
   })
+
+  it('curry2 에 함수가 아닌 인자를 입력하는 경우 TypeError 가 발생할 수 있다.', () => {
+    const unknown = curry2('abc')
+
+    expect(unknown).to.be.a('function')
+    expect(unknown(1)).to.be.a('function')
+    expect(() => unknown(1)(2)).to.throw(TypeError, 'Function.prototype.apply was called on abc, which is a string and not a function')
+    unknown(1)(2)
+  })
 })
 
 describe('[ pipe ]', function () {
@@ -44,5 +53,14 @@ describe('[ pipe ]', function () {
 
     await p1.then(result => expect(result).to.eql(4))
     await p2.then(result => expect(result).to.eql(6))
+  })
+
+  it('pipe 중간에 함수가 아닌 인자가 들어가는 경우 TypeError 가 발생할 수 있다.', () => {
+    const f = pipe(add1, mul2, 3)
+
+    expect(f).to.be.a('function')
+    expect(() => f(1)).to.throw(TypeError, 'f is not a function')
+    expect(() => f(2)).to.throw(TypeError, 'f is not a function')
+    f(1)
   })
 })
