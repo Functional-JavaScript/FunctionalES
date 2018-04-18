@@ -30,7 +30,7 @@ describe('[ pipe ]', function () {
     expect(f(2)).to.eql(6);
   });
 
-  it('pipe 에 전달된 함수 중 promise 를 리턴하는 비동기 함수가 있다면, 즉시 promise를 리턴하고, 내부적으로는 순차적으로 실행한다.', async () => {
+  it('pipe 로 만든 함수를 실행하면, pipe 에 전달되었던 함수들을 순차적으로 실행하면서 값을 누적한다. 그러다 promise를 만나면, 모든 함수들의 누적 결과를 만들기로 약속된 promise를 리턴한다.', async () => {
     this.timeout(2000);
 
     const fP = pipe(add1P, mul2);
