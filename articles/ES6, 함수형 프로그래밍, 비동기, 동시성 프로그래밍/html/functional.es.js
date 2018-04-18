@@ -382,8 +382,7 @@
 
   const sel = baseSel(' > ');
 
-  const root = typeof global == 'object' ? global : window;
-  root.Functional = {
+  const Functional = {
     curry2, flip,
     then, identity, noop,
     ObjIter, valuesIter, stepIter, hasIter, isObject,
@@ -399,4 +398,10 @@
     negate, complement, not, isAny, isUndefined,
     each, log,
   };
+
+  if (typeof global == 'object') {
+    module.exports = Functional;
+  } else {
+    window.Functional = Functional;
+  }
 } ();

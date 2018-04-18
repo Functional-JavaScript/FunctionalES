@@ -1,5 +1,3 @@
-let root = {};
-
 !function() {
   const curry2 = f => (..._) => _.length < 2 ? (..._2) => f(..._, ..._2) : f(..._);
 
@@ -384,7 +382,7 @@ let root = {};
 
   const sel = baseSel(' > ');
 
-  root.Functional = {
+  const Functional = {
     curry2, flip,
     then, identity, noop,
     ObjIter, valuesIter, stepIter, hasIter, isObject,
@@ -398,12 +396,12 @@ let root = {};
     match, or, and, isMatch,
     Tuple, tuple, toTuple, callRight,
     negate, complement, not, isAny, isUndefined,
-    each, log,
+    each, log
   };
-} ();
 
-if (typeof global == 'object') {
-  module.exports = root.Functional || {};
-} else {
-  window.Functional = root.Functional;
-}
+  if (typeof global == 'object') {
+    module.exports = Functional;
+  } else {
+    window.Functional = Functional;
+  }
+} ();
