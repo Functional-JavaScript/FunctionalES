@@ -1,3 +1,5 @@
+let root = {};
+
 !function() {
   const curry2 = f => (..._) => _.length < 2 ? (..._2) => f(..._, ..._2) : f(..._);
 
@@ -382,7 +384,6 @@
 
   const sel = baseSel(' > ');
 
-  const root = typeof global == 'object' ? global : window;
   root.Functional = {
     curry2, flip,
     then, identity, noop,
@@ -400,3 +401,9 @@
     each, log,
   };
 } ();
+
+if (typeof global == 'object') {
+  module.exports = root.Functional || {};
+} else {
+  window.Functional = root.Functional;
+}
