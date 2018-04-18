@@ -1,0 +1,32 @@
+{
+  "name": "functional.es",
+  "version": "1.0.0",
+  "description": "ES6 +, Functional Programming, Asynchronous, Concurrent Programming",
+  "main": "functional.es.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha -R spec test/**/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Functional-JavaScript/FunctionalES.git"
+  },
+  "keywords": [
+    "es6+",
+    "functional",
+    "programming",
+    "javascript"
+  ],
+  "author": "idy@marpple.com",
+  "license": "",
+  "bugs": {
+    "url": "https://github.com/Functional-JavaScript/FunctionalES/issues"
+  },
+  "homepage": "https://github.com/Functional-JavaScript/FunctionalES#readme",
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "mocha": "^5.1.0"
+  }
+}
